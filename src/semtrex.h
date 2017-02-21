@@ -14,7 +14,7 @@
 #ifndef _CEPTR_SEMTREX_H
 #define _CEPTR_SEMTREX_H
 
-#include "tree.h"
+#include "ceptr.h"
 
 enum StateType {StateSymbol,StateAny,StateValue,StateSplit,StateMatch,StateGroupOpen,StateGroupClose,StateDescend,StateWalk,StateNot};
 typedef int StateType;

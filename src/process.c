@@ -8,17 +8,11 @@
  *
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
-#include "process.h"
-#include "def.h"
-#include "semtrex.h"
+#include "sys_defs.h"
+#include "../spec/spec_utils.h" // what?
 #include <stdarg.h>
-#include "receptor.h"
-#include "../spec/spec_utils.h"
-#include "util.h"
-#include "debug.h"
 #include <errno.h>
-#include "accumulator.h"
-#include "protocol.h"
+
 void rt_check(Receptor *r,T *t) {
     if (!(t->context.flags & TFLAG_RUN_NODE)) raise_error("Whoa! Not a run node! %s\n",_td(r,t));
 }
@@ -398,7 +392,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
     Symbol sy;
     T *x,*t,*match_results,*match_tree;
     Error err = noReductionErr;
-    SemTable *sem = q ? q->r->sem : G_sem;
+    SemTable *sem = q ? q->ceptr->sem : G_sem;
 
     debug(D_REDUCE,"Reducing sys proc: %s\n",_sem_get_name(sem,s));
     debug(D_STEP,"Reducing %s\n",_t2s(sem,code));
@@ -415,12 +409,12 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *t = _t_detach_by_idx(code,1);
             Xaddr xa = *(Xaddr *)_t_surface(t);
-            T *v = _r_get_instance(q->r,xa);
+            T *v = _r_get_instance(q->ceptr,xa);
             if (!v) raise_error("Invalid xaddr in GET");
             x = _t_rclone(v);
             _t_free(t);
             if (s.id == DEL_ID) {
-                _r_delete_instance(q->r,xa);
+                _r_delete_instance(q->ceptr,xa);
             }
         }
         break;
@@ -428,7 +422,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def, SEM_TYPE_SYMBOL,q->r->context);
+            SemanticID ns = _d_define(sem,def, SEM_TYPE_SYMBOL,q->ceptr->context);
             x = __t_news(0,RESULT_SYMBOL,ns,true);
         }
         break;
@@ -436,7 +430,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def, SEM_TYPE_STRUCTURE,q->r->context);
+            SemanticID ns = _d_define(sem,def, SEM_TYPE_STRUCTURE,q->ceptr->context);
             x = __t_news(0,RESULT_STRUCTURE,ns,true);
         }
         break;
@@ -444,7 +438,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def, SEM_TYPE_PROCESS,q->r->context);
+            SemanticID ns = _d_define(sem,def, SEM_TYPE_PROCESS,q->ceptr->context);
             x = __t_news(0,RESULT_PROCESS,ns,true);
         }
         break;
@@ -452,7 +446,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = __d_define_receptor(sem,def,q->r->context);
+            SemanticID ns = __d_define_receptor(sem,def,q->ceptr->context);
             x = __t_news(0,RESULT_RECEPTOR,ns,true);
         }
         break;
@@ -460,7 +454,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def,SEM_TYPE_PROTOCOL,q->r->context);
+            SemanticID ns = _d_define(sem,def,SEM_TYPE_PROTOCOL,q->ceptr->context);
             x = __t_news(0,RESULT_PROTOCOL,ns,true);
         }
         break;
@@ -477,7 +471,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             }
             else {
                 t->contents.symbol = s;
-                Xaddr xa = _r_new_instance(q->r,t);
+                Xaddr xa = _r_new_instance(q->ceptr,t);
                 x = __t_new(0,WHICH_XADDR,&xa,sizeof(Xaddr),1);
             }
         }
@@ -715,7 +709,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             UUIDt uuid = *(UUIDt *)_t_surface(su);
 
             T *response = __r_make_signal(from,to,a,carrier,response_contents,&uuid,0,context->conversation ? context->conversation->cid : NULL);
-            x = _r_send(q->r,response);
+            x = _r_send(q->ceptr,response);
         }
         break;
     case QUOTE_ID:
@@ -744,12 +738,12 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
 
             T* signal_contents = _t_detach_by_idx(code,1);
 
-            ReceptorAddress from = __r_get_self_address(q->r);
+            ReceptorAddress from = __r_get_self_address(q->ceptr);
             T *signal;
 
             if (s.id == SAY_ID) {
                 signal = __r_make_signal(from,to,aspect,carrier,signal_contents,0,0,context->conversation ? context->conversation->cid : NULL);
-                x = _r_send(q->r,signal);
+                x = _r_send(q->ceptr,signal);
             }
             else if (s.id == REQUEST_ID) {
                 T *response_point = NULL;
@@ -774,7 +768,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 if (!until) until = defaultRequestUntil();
                 if (!callback) {
                     err = Block;
-                    debug(D_SIGNALS,"blocking at %s\n",_td(q->r,code));
+                    debug(D_SIGNALS,"blocking at %s\n",_td(q->ceptr,code));
                     response_point = code;
                 }
                 else {
@@ -783,7 +777,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 T *cid = context->conversation ? context->conversation->cid : NULL;
                 signal = __r_make_signal(from,to,aspect,carrier,signal_contents,0,until,cid);
 
-                x = _r_request(q->r,signal,response_carrier,response_point,context->id,cid);
+                x = _r_request(q->ceptr,signal,response_carrier,response_point,context->id,cid);
             }
         }
         break;
@@ -819,7 +813,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                     raise_error("COMPLETE invoked without conversation id outside of CONVERSE");
                 cid = context->conversation->cid;
                 UUIDt *cuuid = __cid_getUUID(cid);
-                T *w = __r_cleanup_conversation(q->r,cuuid);
+                T *w = __r_cleanup_conversation(q->ceptr,cuuid);
                 if (w) _t_free(w);
 
                 // now move the execution point up to the CONVERSE root.
@@ -832,7 +826,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 // if the conversation param was specified we need to get it from
 
                 UUIDt *cuuid = __cid_getUUID(cid);
-                T *w = __r_cleanup_conversation(q->r,cuuid);
+                T *w = __r_cleanup_conversation(q->ceptr,cuuid);
                 // restart the CONVERSE instruction that spawned this conversation
                 if (w) {
                     int *code_path = (int *)_t_surface(_t_child(w,WakeupReferenceCodePathIdx));
@@ -1077,7 +1071,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                         state->type = IterateTypeOnSymbol;
                         T *params = _t_child(code,1);
                         T *list = _t_newr(params,ITERATION_DATA);
-                        _a_get_instances(&q->r->instances,*(Symbol *)_t_surface(x),list);
+                        _a_get_instances(&q->ceptr->instances,*(Symbol *)_t_surface(x),list);
                         // if the list has no children the we are already done
                         done = !_t_children(list);
                     }
@@ -1142,7 +1136,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 // add a copy of the body/condition on as the last child
                 _t_add(code,_t_rclone(_t_child(state->code,next_phase == EvalBody ? 3 : 2)));
                 // and reset the current child count so it gets evaluated.
-                set_rt_cur_child(q->r,code,1); // reset the current child count on the code
+                set_rt_cur_child(q->ceptr,code,1); // reset the current child count on the code
                 state->phase = next_phase;
                 return Eval;
             }
@@ -1192,7 +1186,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             T *cid = context && context->conversation ? _t_clone(context->conversation->cid) : NULL;
             // @todo add SEMANTIC_MAP into LISTEN
             if (act) {
-                _r_add_expectation(q->r,aspect,carrier,match,act,with,until,NULL,cid);
+                _r_add_expectation(q->ceptr,aspect,carrier,match,act,with,until,NULL,cid);
                 x = __t_news(0,REDUCTION_ERROR_SYMBOL,NULL_SYMBOL,1);
                 debug(D_LISTEN,"adding expectation\n");
             }
@@ -1202,8 +1196,8 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                     until = _t_new_root(END_CONDITIONS);
                     _t_newi(until,COUNT,1);
                 }
-                _r_add_expectation(q->r,aspect,carrier,match,act,with,until,NULL,cid);
-                debug(D_LISTEN,"adding expectation and blocking at %d,%s\n",context->id,_td(q->r,code));
+                _r_add_expectation(q->ceptr,aspect,carrier,match,act,with,until,NULL,cid);
+                debug(D_LISTEN,"adding expectation and blocking at %d,%s\n",context->id,_td(q->ceptr,code));
                 return Block;
             }
         }
@@ -1214,7 +1208,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             T *interaction = _t_detach_by_idx(code,1);
             T *bindings = _t_detach_by_idx(code,1);
 	    T *sem_map;
-	    x = __o_initiate(q->r,*(SemanticID *)_t_surface(protocol),*(SemanticID *)_t_surface(interaction),bindings,&sem_map);
+	    x = __o_initiate(q->ceptr,*(SemanticID *)_t_surface(protocol),*(SemanticID *)_t_surface(interaction),bindings,&sem_map);
             _t_free(protocol);
             _t_free(interaction);
 	    err = redoReduction;
@@ -1225,7 +1219,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             x = _t_detach_by_idx(code,1);
             Symbol sym = *(Symbol *)_t_surface(x);
             _t_free(x);
-            ReceptorAddress addr =  __r_get_self_address(q->r);
+            ReceptorAddress addr =  __r_get_self_address(q->ceptr);
             x = ___r_make_addr(0,sym,addr,true);
         }
         break;
@@ -1285,7 +1279,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 break;
             case MagicQuit:
                 if (G_vm) {
-                    __r_kill(G_vm->r);
+                    __r_kill(G_vm->ceptr);
                 }
             default:
                 x = __t_new_str(0,TEST_STR_SYMBOL,"blorp!",1);
@@ -1577,7 +1571,7 @@ T * __p_buildErr(R *context) {
  */
 Error _p_step(Q *q, R **contextP) {
     R *context = *contextP;
-    SemTable *sem = q->r->sem;
+    SemTable *sem = q->ceptr->sem;
 
     switch(context->state) {
     case noReductionErr:
@@ -1615,7 +1609,7 @@ Error _p_step(Q *q, R **contextP) {
                 // get results of the run_tree
                 T *np = _t_detach_by_idx(ctx->run_tree,1);
                 _t_replace(context->parent,context->idx,np); // replace the process call node with the result
-                set_rt_cur_child(q->r,np,RUN_TREE_EVALUATED);
+                set_rt_cur_child(q->ceptr,np,RUN_TREE_EVALUATED);
                 context->node_pointer = np;
                 context->state = Eval;  // or possible ascend??
             }
@@ -1707,7 +1701,7 @@ Error _p_step(Q *q, R **contextP) {
                 // or if we are doing deep param_ref searching, then search the entire tree
                 // @todo increase efficiency by adding some instruction to allow the coder choose, see #39
 #ifndef RUN_TREE_SHALLOW_PARAM_REF_SEARCH
-                int node_cur_child = get_rt_cur_child(q->r,np);
+                int node_cur_child = get_rt_cur_child(q->ceptr,np);
                 if ((node_cur_child != RUN_TREE_EVALUATED) && count && (count != node_cur_child))
                     context->state = Descend;
                 else
@@ -1779,7 +1773,7 @@ Error _p_step(Q *q, R **contextP) {
                             parent_u = NULL;
                         }
 
-                        T *c = _r_add_conversation(q->r,parent_u,&cuuid,until?_t_clone(until):NULL,
+                        T *c = _r_add_conversation(q->ceptr,parent_u,&cuuid,until?_t_clone(until):NULL,
                                                    __p_build_wakeup_info(np,context->id)
                                                    );
 
@@ -1796,7 +1790,7 @@ Error _p_step(Q *q, R **contextP) {
                         context->conversation = state;
                     }
                 }
-                if (count == get_rt_cur_child(q->r,np) || semeq(s,QUOTE)) {
+                if (count == get_rt_cur_child(q->ceptr,np) || semeq(s,QUOTE)) {
                     // if the current child == the child count this means
                     // all the children have been processed, so we can evaluate this process
                     // if the process is QUOTE that's a special case and we evaluate it
@@ -1851,7 +1845,7 @@ Error _p_step(Q *q, R **contextP) {
                             }
                             else {
                                 context->state = Eval;
-                                set_rt_cur_child(q->r,np,RUN_TREE_NOT_EVAULATED); // reset the current child count on the code
+                                set_rt_cur_child(q->ceptr,np,RUN_TREE_NOT_EVAULATED); // reset the current child count on the code
                             }
                         }
                         else context->state = e ? e : Ascend;
@@ -1869,14 +1863,14 @@ Error _p_step(Q *q, R **contextP) {
         }
         break;
     case Ascend:
-        set_rt_cur_child(q->r,context->node_pointer,RUN_TREE_EVALUATED);
+        set_rt_cur_child(q->ceptr,context->node_pointer,RUN_TREE_EVALUATED);
         context->node_pointer = context->parent;
         context->parent = _t_parent(context->node_pointer);
         if (!context->parent || context->parent == context->run_tree || (context->node_pointer == context->run_tree)) {
             context->idx = 1;
         }
         else {
-            context->idx = get_rt_cur_child(q->r,context->parent);
+            context->idx = get_rt_cur_child(q->ceptr,context->parent);
         }
         if (context->node_pointer == context->run_tree)
             context->state = Pop;
@@ -1885,7 +1879,7 @@ Error _p_step(Q *q, R **contextP) {
         break;
     case Descend:
         context->parent = context->node_pointer;
-        rt_check(q->r,context->node_pointer);
+        rt_check(q->ceptr,context->node_pointer);
         context->idx = ++rt_cur_child(context->node_pointer);
         context->node_pointer = _t_child(context->node_pointer,context->idx);
         context->state = Eval;
@@ -2012,9 +2006,9 @@ T *_p_make_run_tree(SemTable *sem,Process p,T *params,T *sem_map) {
  * @param[in] r receptor in which to create the Queue
  * @returns Q the processing queue
  */
-Q *_p_newq(Receptor *r) {
+Q *_p_newq(Receptor *ceptr) {
     Q *q = malloc(sizeof(Q));
-    q->r = r;
+    q->ceptr = ceptr;
     q->contexts_count = 0;
     q->active = NULL;
     q->completed = NULL;
@@ -2137,7 +2131,7 @@ Error _p_reduceq(Q *q) {
             char *s = __debug_state_str(context);
             debug(D_REDUCEV,"ID:%d -- State %s(%d)\n",qe->id,s,context->state);
             debug(D_REDUCEV,"  idx:%d\n",context->idx);
-            debug(D_REDUCEV,"%s\n",_t2s(q->r->sem,context->run_tree));
+            debug(D_REDUCEV,"%s\n",_t2s(q->ceptr->sem,context->run_tree));
             if (context) {
                 if (context->node_pointer == 0) {
                     debug(D_REDUCEV,"Node Pointer: NULL!\n");
@@ -2163,7 +2157,7 @@ Error _p_reduceq(Q *q) {
         debug(D_REDUCEV,"result state:%s\n\n",__debug_state_str(qe->context));
         if (debugging(D_REDUCE) && prev_state == Eval) {
             debug_np(D_REDUCE,qe->context->node_pointer);
-            debug(D_REDUCE,"Eval: %s\n\n",_t2s(q->r->sem,qe->context->run_tree));
+            debug(D_REDUCE,"Eval: %s\n\n",_t2s(q->ceptr->sem,qe->context->run_tree));
         }
 #endif
         debug(D_LOCK,"reduce LOCK\n");
@@ -2210,7 +2204,7 @@ void _p_cleanup(Q *q) {
     pthread_mutex_lock(&q->mutex);
     Qe *e = q->completed;
     while (e) {
-        T *ett = _t_child(_t_child(q->r->root,ReceptorInstanceStateIdx),ReceptorElapsedTimeIdx);
+        T *ett = _t_child(_t_child(q->ceptr->root,ReceptorInstanceStateIdx),ReceptorElapsedTimeIdx);
         int *et = (int *)_t_surface(ett);
         (*et) += e->accounts.elapsed_time;
         e = e->next;

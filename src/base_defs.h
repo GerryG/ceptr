@@ -11,7 +11,6 @@
 
 #ifndef _CEPTR_BASE_DEFS_H
 #define _CEPTR_BASE_DEFS_H
-#include "sys_defs.h"
 
 void base_defs(SemTable *sem);
 void base_contexts(SemTable *sem);

@@ -27,7 +27,7 @@ void testAccBootStrap() {
     _a_boot(dname);
     spec_is_equal(stat(dname, &st),0); // does after boot
 
-    spec_is_str_equal(t2s(G_vm->r->root),"(RECEPTOR_INSTANCE (INSTANCE_OF:SYS_RECEPTOR) (CONTEXT_NUM:0) (PARENT_CONTEXT_NUM:-1) (RECEPTOR_STATE (FLUX (DEFAULT_ASPECT (EXPECTATIONS) (SIGNALS))) (PENDING_SIGNALS) (PENDING_RESPONSES) (CONVERSATIONS) (RECEPTOR_ELAPSED_TIME:0)))");
+    spec_is_str_equal(t2s(G_vm->ceptr->root),"(RECEPTOR_INSTANCE (INSTANCE_OF:SYS_RECEPTOR) (CONTEXT_NUM:0) (PARENT_CONTEXT_NUM:-1) (RECEPTOR_STATE (FLUX (DEFAULT_ASPECT (EXPECTATIONS) (SIGNALS))) (PENDING_SIGNALS) (PENDING_RESPONSES) (CONVERSATIONS) (RECEPTOR_ELAPSED_TIME:0)))");
 
     // new clock receptor should be instantiated and active
     spec_is_equal(G_vm->active_receptor_count,1);
@@ -59,10 +59,10 @@ void testAccBootStrap() {
     _a_boot(dname);
 
     // verify that clock with planted expectation and it's accumulated data are re-instantiated at boot
-    //__r_dump_instances(G_vm->r);
+    //__r_dump_instances(G_vm->ceptr);
 
     Xaddr x = {CLOCK_RECEPTOR,1};
-    T *ct = _r_get_instance(G_vm->r,x);
+    T *ct = _r_get_instance(G_vm->ceptr,x);
     spec_is_false(ct == NULL);
     /* Receptor *cr = __r_get_receptor(ct); */
 
@@ -73,7 +73,7 @@ void testAccBootStrap() {
     /* // depending on threads and what ran when..  grr */
     /* //    spec_is_str_equal(_t2s(&cr->defs,cr->flux),"buf1"); */
     /* // spec_is_str_equal(_t2s(&cr->defs,cr->flux),buf1); */
-    /* spec_is_symbol_equal(G_vm->r,_t_symbol(cr->root),CLOCK_RECEPTOR); */
+    /* spec_is_symbol_equal(G_vm->ceptr,_t_symbol(cr->root),CLOCK_RECEPTOR); */
     /* spec_is_str_equal(t2s(cr->root),"(RECEPTOR_INSTANCE (CONTEXT_NUM:4) (PARENT_CONTEXT_NUM:0) (RECEPTOR_STATE (FLUX (DEFAULT_ASPECT (EXPECTATIONS (EXPECTATION (CARRIER:CLOCK_TELL_TIME) (PATTERN (SEMTREX_SYMBOL_LITERAL (SEMTREX_SYMBOL:CLOCK_TELL_TIME))) (ACTION:respond with current time) (PARAMS) (END_CONDITIONS (UNLIMITED)))) (SIGNALS))) (PENDING_SIGNALS) (PENDING_RESPONSES) (RECEPTOR_ELAPSED_TIME:0)))"); */
     /* spec_is_equal(G_vm->active_receptor_count,1); */
 

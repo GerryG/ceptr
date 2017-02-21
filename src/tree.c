@@ -10,14 +10,6 @@
  */
 
 #include "tree.h"
-#include "ceptr_error.h"
-#include "hashfn.h"
-#include "def.h"
-
-#include "receptor.h"
-#include "scape.h"
-#include "util.h"
-#include "debug.h"
 
 /*****************  Node creation */
 void __t_append_child(T *t,T *c) {
@@ -1009,7 +1001,6 @@ T *_t_parse(SemTable *sem,T *parent,char *s,...) {
 }
 
 
-#include "semtrex.h"
 // used to resolve a semantic link that links kind to kind.
 T *__t_find_actual(T *sem_map,Symbol actual_kind,T *replacement_kind) {
     T *result = NULL;
@@ -1085,7 +1076,7 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
             if (semeq(sym,_t_symbol(ref)) && semeq(valsym,*(Symbol *)_t_surface(ref))) {
                 debug(D_TREE," yes!)\n");
                 debug(D_TREE,"with %s\n",t2s(m));
-                T *r = NULL;
+                TreeNode *replace_node = NULL;
                 T *replacement_value = _t_child(_t_child(m,SemanticMapReplacementValIdx),1);
                 if (semeq(sym,GOAL) && !v) { // treat a VALUE_OF slot as a symbol not a process
                     SemanticID p = _t_symbol(replacement_value);
@@ -1105,48 +1096,52 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
                             raise_error("expecting GOAL or ACTUAL_PROCESS for replacement values. got: %s",t2s(m));
                         }
                     }
-                    r = __t_new(0,p,0,0,is_run_node);
+                    replace_node = __t_new(0,p,0,0,is_run_node);
                     if (is_run_node)
-                        ((rT *)r)->cur_child = RUN_TREE_NOT_EVAULATED;
+                        ((rT *)replace_node)->cur_child = RUN_TREE_NOT_EVAULATED;
                 }
                 else {
                     SemanticID rsid = _t_symbol(replacement_value);
                     debug(D_TREE,"replacement value: %s\n",t2s(replacement_value));
                     // if the replacement value is a kind try to re-resolve from the map
                     if (semeq(rsid,ROLE)) {
-                        T *x = __t_find_actual(sem_map,ACTUAL_RECEPTOR,replacement_value);
-                        if (x) replacement_value = x;
+                        T *act_val = __t_find_actual(sem_map,ACTUAL_RECEPTOR,replacement_value);
+                        if (act_val) replacement_value = act_val;
                     }
                     else if (semeq(rsid,USAGE)) {
-                        T *x = __t_find_actual(sem_map,ACTUAL_SYMBOL,replacement_value);
-                        if (x) replacement_value = x;
+                        T *act_val = __t_find_actual(sem_map,ACTUAL_SYMBOL,replacement_value);
+                        if (act_val) replacement_value = act_val;
                     }
                     if (v) {
                         // in the value_of case the replacement node is of the type specified in the template
                         // and the "value" is either the surface of the "ACTUAL_X" or its children
                         if (_t_children(replacement_value)) {
-                            if (is_run_node)
-                                r = _t_rclone(replacement_value);
-                            else
-                                r = _t_clone(replacement_value);
-                            r->contents.symbol = valof;
+                            replace_node = (is_run_node)
+                              ? _t_rclone(replacement_value)
+                              : _t_clone(replacement_value);
+                            replace_node->contents.symbol = valof;
                         }
                         else {
-                            r = __t_new(0,valof,_t_surface(replacement_value),_t_size(t),is_run_node);
+                            replace_node = __t_new(0, valof,
+                              _t_surface(replacement_value), _t_size(t), is_run_node);
                         }
                     }
                     else {
-                        // in the structure case: first, check to see if the replacement node is an "ACTUAL_SYMBOL" in which case we try to find an actual value for that symbol in the semantic map, and if that fails, simply assume that the symbol value is the actual value.
-                        T *temp = NULL;
+                        // in the structure case: first, check to see if the
+                        // replacement node is an "ACTUAL_SYMBOL" in which case
+                        // we try to find an actual value for that symbol in the
+                        // semantic map, and if that fails, simply assume that the
+                        // symbol value is the actual value.
+                        TreeNode *temp = NULL;
                         if (semeq(rsid,ACTUAL_SYMBOL)) {
-                            Symbol acsym = *(Symbol *)_t_surface(replacement_value);
-                            T *ac = _t_news(0,ACTUAL_SYMBOL,acsym);
-                            T *x = __t_find_actual(sem_map,ACTUAL_VALUE,ac);
-                            _t_free(ac);
-                            if (x) {
-                                replacement_value = _t_child(x,1);
+                            Symbol actual_sym = *(Symbol *)_t_surface(replacement_value);
+                            TreeNode *actual = _t_news(0,ACTUAL_SYMBOL,actual_sym);
+                            TreeNode *act_val = __t_find_actual(sem_map,ACTUAL_VALUE,actual);
+                            _t_free(actual);
+                            if (act_val) {
+                                replacement_value = _t_child(act_val,1);
                             }
-                            else replacement_value = temp = _t_new_root(acsym);
+                            else replacement_value = temp = _t_new_root(actual_sym);
                         }
                         else if (semeq(rsid,ACTUAL_VALUE)) {
                             replacement_value = _t_child(replacement_value,1);
@@ -1156,21 +1151,21 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
                         }
                         if (replacement_value) {
                             if (is_run_node)
-                                r = _t_rclone(replacement_value);
+                                replace_node = _t_rclone(replacement_value);
                             else
-                                r = _t_clone(replacement_value);
+                                replace_node = _t_clone(replacement_value);
                         }
-                        else r = NULL;
+                        else replace_node = NULL;
                         if (temp) _t_free(temp);
                     }
                 }
                 if (children) {
-                    T *t;
-                    while(t = _t_detach_by_idx(children,1))
-                        _t_add(r,t);
+                    TreeNode *node;
+                    while ((node = _t_detach_by_idx(children,1)))
+                        _t_add(replace_node,node);
                     _t_free(children);
                 }
-                if (r) _t_replace_node(template,r);
+                if (replace_node) _t_replace_node(template,replace_node);
                 else {
                     T *p = _t_parent(template);
                     if (!p) raise_error("not expecting a root node!");
@@ -1242,15 +1237,15 @@ size_t _t_size(T *t) {
 /*****************  Tree navigation */
 
 /**
- * Get a tree node's nth child
+ * Get a tree node's nth child (1 based)
  *
  * @param[in] t the node
  * @param[in] i desired child
  * @returns child or NULL if that child doesn't exist
  */
-T *_t_child(T *t,int i) {
-    if (i>t->structure.child_count || i < 1) return 0;
-    return t->structure.children[i-1];
+TreeNode *_t_child(TreeNode *node, int idx) {
+    if (idx>node->structure.child_count || idx < 1) return 0;
+    return node->structure.children[idx-1];
 }
 
 /**
@@ -1431,29 +1426,29 @@ void _t_pathcpy(int *dst_p,int *src_p) {
 /**
  * get a node by path
  *
- * @param[in] t the tree to search
- * @param[in] p the path to search for
+ * @param[in] node the tree to search
+ * @param[in] path the path to search for
  * @returns pointer to a T
  *
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreePathGet
  */
-T * _t_get(T *t,int *p) {
-    int i = *p++;
-    T *c;
+TreeNode * _t_get(TreeNode *node,int *path) {
+    int i = *path++;
+    TreeNode *child_node;
     if (i == TREE_PATH_TERMINATOR)
-        return t;
+        return node;
     else if (i == 0) {
-        if (!(t->context.flags & TFLAG_SURFACE_IS_TREE)) {
+        if (!(node->context.flags & TFLAG_SURFACE_IS_TREE)) {
             raise_error("surface is not a tree!");
         }
-        c = (T *)(_t_surface(t));
+        child_node = (TreeNode *)(_t_surface(node));
     }
     else
-        c = _t_child(t,i);
-    if (c == NULL ) return NULL;
-    if (*p == TREE_PATH_TERMINATOR) return c;
-    return _t_get(c,p);
+        child_node = _t_child(node,i);
+    if (child_node == NULL ) return NULL;
+    if (*path == TREE_PATH_TERMINATOR) return child_node;
+    return _t_get(child_node, path);
 }
 
 /**
@@ -1655,7 +1650,8 @@ int _t_hash_equal(TreeHash h1,TreeHash h2) {
 UUIDt __uuid_gen() {
     UUIDt u;
     struct timespec c;
-    clock_gettime(CLOCK_MONOTONIC, &c);
+    // need https://gist.github.com/jbenet/1087739 for Mac to work
+    //clock_gettime(CLOCK_MONOTONIC, &c);
     u.time = ((c.tv_sec * (1000000)) + (c.tv_nsec / 1000));
     u.data = 0;
     return u;
@@ -1670,7 +1666,7 @@ int __uuid_equal(UUIDt *u1,UUIDt *u2) {
 #define SWRITE(type,value) type * type##P = (type *)(*bufferP +offset); *type##P=value;offset += sizeof(type);
 
 /**
- * Serialize a tree by recursive descent.
+ * Serialize a tree by recursive descent. (depth or breadth first?)
  *
  * @param[in] d definitions
  * @param[in] t tree to be serialized
@@ -1825,7 +1821,7 @@ char * _t2rawjson(SemTable *sem,T *t,int level,char *buf) {
                 sprintf(buf,",\"surface\":%d",*(int *)_t_surface(t));
                 break;
             case INTEGER64_ID:
-                sprintf(buf,",\"surface\":%ld",*(uint64_t *)_t_surface(t));
+                sprintf(buf,",\"surface\":%lld",*(uint64_t *)_t_surface(t));
                 break;
             case FLOAT_ID:
                 sprintf(buf,",\"surface\":%f",*(float *)_t_surface(t));
@@ -1960,7 +1956,7 @@ char * _t2json(SemTable *sem,T *t,int level,char *buf) {
                 sprintf(buf,"\"type\":\"INTEGER\",\"name\":\"%s\",\"surface\":%d",n,*(int *)_t_surface(t));
                 break;
             case INTEGER64_ID:
-                sprintf(buf,"\"type\":\"INTEGER64\",\"name\":\"%s\",\"surface\":%ld",n,*(uint64_t*)_t_surface(t));
+                sprintf(buf,"\"type\":\"INTEGER64\",\"name\":\"%s\",\"surface\":%lld",n,*(uint64_t*)_t_surface(t));
                 break;
             case FLOAT_ID:
                 sprintf(buf,"\"type\":\"FLOAT\",\"name\":\"%s\",\"surface\":%f",n,*(float *)_t_surface(t));

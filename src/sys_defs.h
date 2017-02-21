@@ -9,8 +9,28 @@
 #ifndef _CEPTR_SYS_DEFS_H
 #define _CEPTR_SYS_DEFS_H
 
+#include <stdint.h>
+#include <stdio.h>
+#include <stdbool.h>
+
+#include "uthash.h"
+#include "stream.h"
 #include "ceptr_types.h"
 #include "semtable.h"
+#include "base_defs.h"
+#include "semtrex.h"
+#include "mtree.h"
+#include "tree.h"
+#include "receptor.h"
+#include "process.h"
+#include "protocol.h"
+#include "scape.h"
+#include "vmhost.h"
+#include "accumulator.h"
+#include "def.h"
+#include "debug.h"
+#include "util.h"
+
 
 SemTable *G_sem;
 
@@ -51,7 +71,6 @@ char * G_label;
 
 T *sT_(SemTable *sem,Symbol sym,int num_params,...);
 
-void load_contexts(SemTable *sem);
-void load_context(char *name, Receptor *parent);
+void load_system(VMHost *vm);
 
 #endif

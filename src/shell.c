@@ -8,10 +8,8 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
+#include "ceptr.h"
 #include "shell.h"
-#include "semtrex.h"
-#include "protocol.h"
-
 
 void addCommand(Receptor *r,ReceptorAddress ox,char *command,char *desc,T *code,T *bindings_handler) {
     T *expect = _t_new_root(PATTERN);
@@ -53,9 +51,9 @@ void addCommand(Receptor *r,ReceptorAddress ox,char *command,char *desc,T *code,
 
 void makeShell(VMHost *v,FILE *input, FILE *output,Receptor **irp,Receptor **orp,Stream **isp,Stream **osp) {
     // define and then create the shell receptor
-    Symbol shell = _d_define_receptor(v->r->sem,"shell",__r_make_definitions(),DEV_COMPOSITORY_CONTEXT);
+    Symbol shell = _d_define_receptor(v->ceptr->sem,"shell",__r_make_definitions(),DEV_COMPOSITORY_CONTEXT);
     Receptor *r = _r_new(v->sem,shell);
-    Xaddr shellx = _v_new_receptor(v,v->r,shell,r);
+    Xaddr shellx = _v_new_receptor(v,v->ceptr,shell,r);
     _v_activate(v,shellx);
 
     // create stdin/out receptors
@@ -65,12 +63,12 @@ void makeShell(VMHost *v,FILE *input, FILE *output,Receptor **irp,Receptor **orp
 
     Receptor *i_r = *irp = _r_makeStreamEdgeReceptor(v->sem);
     _r_addReader(i_r,input_stream,r->addr,DEFAULT_ASPECT,parse_line,LINE,false);
-    Xaddr ix = _v_new_receptor(v,v->r,STREAM_EDGE,i_r);
+    Xaddr ix = _v_new_receptor(v,v->ceptr,STREAM_EDGE,i_r);
     _v_activate(v,ix);
 
     Receptor *o_r = *orp = _r_makeStreamEdgeReceptor(v->sem);
     _r_addWriter(o_r,output_stream,DEFAULT_ASPECT);
-    Xaddr ox = _v_new_receptor(v,v->r,STREAM_EDGE,o_r);
+    Xaddr ox = _v_new_receptor(v,v->ceptr,STREAM_EDGE,o_r);
     _v_activate(v,ox);
 
     // set up shell to express the line parsing protocol when it receives LINES from the stream reader

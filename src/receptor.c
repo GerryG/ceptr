@@ -8,14 +8,8 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "receptor.h"
-#include "stream.h"
-#include "semtrex.h"
-#include "process.h"
-#include "accumulator.h"
-#include "debug.h"
-#include "mtree.h"
-#include "protocol.h"
+#include "ceptr.h"
+
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
@@ -362,8 +356,14 @@ int _r_def_match(Receptor *r,Symbol s,T *t) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/receptor_spec.h testReceptorInstances
  */
-Xaddr _r_new_instance(Receptor *r,T *t) {
+Xaddr _r_new_instance(Receptor *r,TreeNode *t) {
     return _a_new_instance(&r->instances,t);
+}
+
+Xaddr _r_load_receptor_package(Receptor *ceptr, TreeNode *ceptr_package) {
+    raise_error("not implemented");
+    // not sure what is missing, moved this, how do we need to process ceptr_package?
+    return _r_new_instance(ceptr, ceptr_package);
 }
 
 /**
@@ -664,16 +664,16 @@ void __r_test_expectation(Receptor *r,T *expectation,T *signal) {
     T *head =_t_getv(signal,SignalMessageIdx,MessageHeadIdx,TREE_PATH_TERMINATOR);
     T *s_carrier = _t_child(head,HeadCarrierIdx);
 
-    debug(D_SIGNALS,"checking signal carrier %s\n",_td(q->r,s_carrier));
-    debug(D_SIGNALS,"against expectation carrier %s\n",_td(q->r,e_carrier));
+    debug(D_SIGNALS,"checking signal carrier %s\n",_td(q->ceptr,s_carrier));
+    debug(D_SIGNALS,"against expectation carrier %s\n",_td(q->ceptr,e_carrier));
 
     Symbol esym = *(Symbol *)_t_surface(e_carrier);
     if (!semeq(esym,*(Symbol *)_t_surface(s_carrier)) && !semeq(esym,NULL_SYMBOL)) return;
 
     T *s_cid = __t_find(head,CONVERSATION_IDENT,HeadOptionalsIdx);
     T *e_cid = __t_find(expectation,CONVERSATION_IDENT,ExpectationOptionalsIdx);
-    debug(D_SIGNALS,"checking signal conversation %s\n",_td(q->r,s_cid));
-    debug(D_SIGNALS,"against expectation conversation %s\n",_td(q->r,e_cid));
+    debug(D_SIGNALS,"checking signal conversation %s\n",_td(q->ceptr,s_cid));
+    debug(D_SIGNALS,"against expectation conversation %s\n",_td(q->ceptr,e_cid));
 
     // if expectation is keyed to a conversation and the signal isn't the instant no match
     if (e_cid && !s_cid) return;
@@ -687,8 +687,8 @@ void __r_test_expectation(Receptor *r,T *expectation,T *signal) {
     // if we get a match, create a run tree from the action, using the match and signal as the parameters
     T *stx = _t_news(0,SEMTREX_GROUP,NULL_SYMBOL);
     _t_add(stx,_t_clone(_t_child(pattern,1)));
-    debug(D_SIGNALS,"matching %s\n",_td(q->r,signal_contents));
-    debug(D_SIGNALS,"against %s\n",_td(q->r,stx));
+    debug(D_SIGNALS,"matching %s\n",_td(q->ceptr,signal_contents));
+    debug(D_SIGNALS,"against %s\n",_td(q->ceptr,stx));
 
     bool matched;
     matched = _t_matchr(stx,signal_contents,&m);
@@ -697,7 +697,7 @@ void __r_test_expectation(Receptor *r,T *expectation,T *signal) {
     evaluateEndCondition(_t_child(expectation,ExpectationEndCondsIdx),&cleanup,&allow);
 
     if (allow && matched) {
-        debug(D_SIGNALS,"got a match on %s\n",_td(q->r,stx));
+        debug(D_SIGNALS,"got a match on %s\n",_td(q->ceptr,stx));
 
         T *rt=0;
         T *action = _t_child(expectation,ExpectationActionIdx);
@@ -731,8 +731,8 @@ void __r_test_expectation(Receptor *r,T *expectation,T *signal) {
         _t_free(m);
     }
     if (cleanup) {
-        debug(D_SIGNALS,"cleaning up %s\n",_td(q->r,expectation));
-        _r_remove_expectation(q->r,expectation);
+        debug(D_SIGNALS,"cleaning up %s\n",_td(q->ceptr,expectation));
+        _r_remove_expectation(q->ceptr,expectation);
     }
 
     _t_free(stx);

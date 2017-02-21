@@ -12,12 +12,7 @@
 #ifndef _CEPTR_RECEPTOR_H
 #define _CEPTR_RECEPTOR_H
 
-#include "semtable.h"
-#include "tree.h"
-#include "def.h"
-#include "label.h"
-#include "process.h"
-#include "scape.h"
+#include "ceptr.h"
 
 // delivery errors
 enum {noDeliveryErr};

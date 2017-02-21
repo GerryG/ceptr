@@ -8,8 +8,6 @@
  */
 
 #include "label.h"
-#include "tree.h"
-#include "hashfn.h"
 
 Label str2label(char* s) {
     return hashfn(s,strlen(s));

@@ -13,7 +13,7 @@
 #ifndef _CEPTR_SCAPE_H
 #define _CEPTR_SCAPE_H
 
-#include "tree.h"
+#include "ceptr.h"
 
 Scape *_s_new(Symbol key_source,Symbol data_source);
 void _s_free(Scape *s);

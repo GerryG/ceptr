@@ -9,7 +9,7 @@
 void testGroupCreate() {
     Receptor *r = makeGroup(G_vm,"ceptr chat");
     Receptor *m = _r_new(G_sem,TEST_RECEPTOR);
-    Xaddr mx = _v_new_receptor(G_vm,G_vm->r,TEST_RECEPTOR,m);
+    Xaddr mx = _v_new_receptor(G_vm,G_vm->ceptr,TEST_RECEPTOR,m);
     _v_activate(G_vm,mx);
 
     spec_is_str_equal(_td(r,_t_child(r->root,1)),"(INSTANCE_OF:ceptr chat)");

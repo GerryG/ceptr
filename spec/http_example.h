@@ -13,7 +13,6 @@
 #include "../src/def.h"
 #include "../src/semtrex.h"
 #include "spec_utils.h"
-#include "../src/vmhost.h"
 #include "../src/accumulator.h"
 #include <unistd.h>
 
@@ -356,7 +355,7 @@ void testHTTPedgeReceptor() {
     // create empty edge receptor
     Receptor *r = _r_makeStreamEdgeReceptor(v->sem);
     // instantiate it in the vmhost
-    Xaddr edge = _v_new_receptor(v,v->r,STREAM_EDGE,r);
+    Xaddr edge = _v_new_receptor(v,v->ceptr,STREAM_EDGE,r);
     // set up a socket listener that will transcode ascii to HTTP_REQUEST and send all the received requests to an HTTP aspect on the same receptor
     T *code = _t_parse(r->sem,0,"(CONVERSE (SCOPE (ITERATE (PARAMS) (STREAM_ALIVE (PARAM_REF:/2/1)) (INITIATE_PROTOCOL (PNAME:HTTP) (WHICH_INTERACTION:backnforth) (PROTOCOL_BINDINGS (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_CLIENT) %)) (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_SERVER) %)) (RESOLUTION (WHICH_PROCESS (GOAL:RESPONSE_HANDLER) (ACTUAL_PROCESS:echo2stream))) (RESOLUTION (WHICH_USAGE (USAGE:RESPONSE_HANDLER_PARAMETERS) (ACTUAL_VALUE (PARAM_REF:/2/1)))) (RESOLUTION (WHICH_VALUE (ACTUAL_SYMBOL:HTTP_REQUEST) (ACTUAL_VALUE (STREAM_READ (PARAM_REF:/2/1) (RESULT_SYMBOL:HTTP_REQUEST)))))) ) ) (STREAM_CLOSE (PARAM_REF:/2/1))) (BOOLEAN:1))",__r_make_addr(0,ACTUAL_RECEPTOR,r->addr),__r_make_addr(0,ACTUAL_RECEPTOR,r->addr));
     // add an error handler that just completes the iteration
@@ -401,7 +400,7 @@ void testHTTPedgeReceptor() {
     //spec_is_str_equal(t2s(r->flux),"");
 
     // cleanup vmhost instance
-    __r_kill(G_vm->r);
+    __r_kill(G_vm->ceptr);
     //    _v_join_thread(&G_vm->clock_thread);
     _v_join_thread(&G_vm->vm_thread);
 

@@ -8,14 +8,9 @@
  * @copyright Copyright (C) 2013-2014, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "accumulator.h"
-#include "semtrex.h"
-#include "mtree.h"
-#include "receptor.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "debug.h"
-#include "util.h"
+#include "sys_defs.h"
 
 VMHost *G_vm = 0;
 
@@ -133,7 +128,7 @@ void _a_boot(char *dir_path) {
  */
 void _a_shut_down() {
     // cleanly close down any processing in the VM_Host
-    __r_kill(G_vm->r);
+    __r_kill(G_vm->ceptr);
 
     _v_join_thread(&G_vm->clock_thread);
     _v_join_thread(&G_vm->vm_thread);
@@ -160,7 +155,7 @@ void _a_shut_down() {
     // serialize the receptor part of the vmhost
     void *surface;
     size_t length;
-    _r_serialize(G_vm->r,&surface,&length);
+    _r_serialize(G_vm->ceptr,&surface,&length);
     //    _r_unserialize(surface);
     __a_vmfn(fn,G_vm->dir);
     writeFile(fn,surface,length);

@@ -8,10 +8,7 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "protocol.h"
-#include "vmhost.h"
-#include "semtrex.h"
-#include "debug.h"
+#include "sys_defs.h"
 
 extern VMHost *G_vm;
 

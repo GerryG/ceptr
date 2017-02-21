@@ -5,7 +5,6 @@
  */
 
 #include "../src/ceptr.h"
-#include "../src/vmhost.h"
 #include "http_example.h"
 #include "../src/shell.h"
 #include "../src/protocol.h"
@@ -13,13 +12,13 @@
 void testVMHostCreate() {
     //! [testVMHostCreate]
     VMHost *v = _v_new();
-    SemTable *sem = v->r->sem;
+    SemTable *sem = v->ceptr->sem;
     // test that the base contexts and defs were created
     spec_is_equal(sem->contexts,_NUM_DEFAULT_CONTEXTS);
     spec_is_equal(_t_children(_t_child(sem->stores[0].definitions,SEM_TYPE_SYMBOL)),NUM_SYS_SYMBOLS-1);
     spec_is_equal(_t_children(_t_child(sem->stores[0].definitions,SEM_TYPE_STRUCTURE)),NUM_SYS_STRUCTURES-1);
 
-    spec_is_str_equal(t2s(v->r->root),"(RECEPTOR_INSTANCE (INSTANCE_OF:SYS_RECEPTOR) (CONTEXT_NUM:0) (PARENT_CONTEXT_NUM:-1) (RECEPTOR_STATE (FLUX (DEFAULT_ASPECT (EXPECTATIONS) (SIGNALS))) (PENDING_SIGNALS) (PENDING_RESPONSES) (CONVERSATIONS) (RECEPTOR_ELAPSED_TIME:0)))");
+    spec_is_str_equal(t2s(v->ceptr->root),"(RECEPTOR_INSTANCE (INSTANCE_OF:SYS_RECEPTOR) (CONTEXT_NUM:0) (PARENT_CONTEXT_NUM:-1) (RECEPTOR_STATE (FLUX (DEFAULT_ASPECT (EXPECTATIONS) (SIGNALS))) (PENDING_SIGNALS) (PENDING_RESPONSES) (CONVERSATIONS) (RECEPTOR_ELAPSED_TIME:0)))");
 
     // test the installed receptors scape
     spec_is_sem_equal(v->installed_receptors->key_source,RECEPTOR_IDENTIFIER);
@@ -124,7 +123,7 @@ void testVMHostCreate() {
 /*     T *p = _makeTestHTTPAppReceptorPackage(); */
 
 /*     Xaddr x = _v_load_receptor_package(v,p); */
-/*     T *p1 = _r_get_instance(v->c,x); */
+/*     T *p1 = _r_get_instance(v->ceptr,x); */
 
 /*     spec_is_ptr_equal(p,p1); */
 /*     _v_free(v); */
@@ -141,9 +140,9 @@ void testVMHostCreate() {
 /*     Xaddr x = _v_install_r(v,xp,0,"hello world"); */
 
 /*     // installing the receptor should instantiate a receptor from the package with the given bindings and symbol label */
-/*     T *r = _r_get_instance(v->r,x); */
-/*     spec_is_symbol_equal(v->r,x.symbol,INSTALLED_RECEPTOR); */
-/*     spec_is_symbol_equal(v->r,_t_symbol(_t_child(r,1)),_r_get_symbol_by_label(v->r,"hello world")); */
+/*     T *r = _r_get_instance(v->ceptr,x); */
+/*     spec_is_symbol_equal(v->ceptr,x.symbol,INSTALLED_RECEPTOR); */
+/*     spec_is_symbol_equal(v->ceptr,_t_symbol(_t_child(r,1)),_r_get_symbol_by_label(v->ceptr,"hello world")); */
 
 /*     // and the definition labels of the instantiated receptor should all be set up properly */
 /*     Receptor *httpr = (Receptor *)_t_surface(_t_child(r,1)); */
@@ -155,10 +154,10 @@ void testVMHostCreate() {
 /*     spec_is_true(is_null_xaddr(x)); */
 
 /*     // because the receptor's id is in the installed_receptors scape */
-/*     T *pack = _r_get_instance(v->c,xp); */
+/*     T *pack = _r_get_instance(v->ceptr,xp); */
 /*     T *id = _t_child(pack,2); */
-/*     TreeHash h = _t_hash(v->r->sem,id); */
-/*     spec_is_xaddr_equal(v->r->sem,_s_get(v->installed_receptors,h),xp); */
+/*     TreeHash h = _t_hash(v->ceptr->sem,id); */
+/*     spec_is_xaddr_equal(v->ceptr->sem,_s_get(v->installed_receptors,h),xp); */
 
 /*     _v_free(v); */
 /*     //! [testVMHostInstallReceptor] */
@@ -172,7 +171,7 @@ void testVMHostCreate() {
 /*     T *httpd_rp = _makeTestHTTPServerReceptorPackage(); */
 /*     Xaddr httpd_px = _v_load_receptor_package(v,httpd_rp); */
 /*     Xaddr httpd_x = _v_install_r(v,httpd_px,0,"http server"); */
-/*     T *installed_httpd = _r_get_instance(v->r,httpd_x); */
+/*     T *installed_httpd = _r_get_instance(v->ceptr,httpd_x); */
 /*     Receptor *httpd_r = (Receptor *)_t_surface(_t_child(installed_httpd,1)); */
 
 /*     // create and install an app bound to a HOST */
@@ -187,7 +186,7 @@ void testVMHostCreate() {
 /*     _t_new(pair,HTTP_REQUEST_HOST,host,strlen(host)); */
 
 /*     Xaddr x = _v_install_r(v,xp,b,"hello world app"); */
-/*     T *installed_hellow = _r_get_instance(v->r,x); */
+/*     T *installed_hellow = _r_get_instance(v->ceptr,x); */
 /*     Receptor *hello_r = (Receptor *)_t_surface(_t_child(installed_hellow,1)); */
 
 /*     // add a listener that matches on any request with "Host: helloworld.org" */
@@ -248,7 +247,7 @@ Receptor *_makeAliveProtocolReceptor(VMHost *v);
 void testVMHostActivateReceptor()  {
     //! [testVMHostActivateReceptor]
     VMHost *v = _v_new();
-    SemTable *sem = v->r->sem;
+    SemTable *sem = v->ceptr->sem;
 
     Receptor *server =  _r_new(sem,TEST_RECEPTOR);
     _o_express_role(server,ALIVE,SERVER,DEFAULT_ASPECT,NULL);
@@ -266,8 +265,8 @@ void testVMHostActivateReceptor()  {
     _o_express_role(client,ALIVE,CLIENT,DEFAULT_ASPECT,binding);
     _t_free(binding);
 
-    Xaddr sx = _v_new_receptor(v,v->r,TEST_RECEPTOR,server);
-    Xaddr cx = _v_new_receptor(v,v->r,TEST_RECEPTOR,client);
+    Xaddr sx = _v_new_receptor(v,v->ceptr,TEST_RECEPTOR,server);
+    Xaddr cx = _v_new_receptor(v,v->ceptr,TEST_RECEPTOR,client);
     _v_activate(v,sx);
     _v_activate(v,cx);
 
@@ -283,18 +282,18 @@ void testVMHostActivateReceptor()  {
 
     _v_send(v,client->addr,server->addr,DEFAULT_ASPECT,ALIVE,_t_newi(0,PING,0));
 
-    spec_is_str_equal(_td(client,v->r->pending_signals),"(PENDING_SIGNALS (SIGNAL (ENVELOPE (FROM_ADDRESS (CONTEXT_NUM:3)) (TO_ADDRESS (CONTEXT_NUM:2)) (ASPECT_IDENT:DEFAULT_ASPECT) (CARRIER:ALIVE) (SIGNAL_UUID)) (BODY:{(PING)})))");
+    spec_is_str_equal(_td(client,v->ceptr->pending_signals),"(PENDING_SIGNALS (SIGNAL (ENVELOPE (FROM_ADDRESS (CONTEXT_NUM:3)) (TO_ADDRESS (CONTEXT_NUM:2)) (ASPECT_IDENT:DEFAULT_ASPECT) (CARRIER:ALIVE) (SIGNAL_UUID)) (BODY:{(PING)})))");
 
     // simulate round-robin processing of signals
     //debug_enable(D_SIGNALS);
-    _v_deliver_signals(v,v->r);
+    _v_deliver_signals(v,v->ceptr);
     _p_reduceq(server->q);
     _v_deliver_signals(v,server);
     //   _p_reduceq(client->q);
 
     // now confirm that the signal was sent,
     // first that the pending signals list is empty
-    spec_is_equal(_t_children(v->r->pending_signals),0);
+    spec_is_equal(_t_children(v->ceptr->pending_signals),0);
 
     // @todo delivery of response doesn't work here because _v_send is broken and there's no process
     // q or anything for the delivery to unblock.  This is a broken spec that we need to fix!!
@@ -344,7 +343,7 @@ void testVMHostShell() {
     if (output_data != 0) {
         output_data[121] =0;  // clip the tick so it work regardless of the time
         spec_is_str_equal(output_data,"COMPOSITORY:0 DEV_COMPOSITORY:1 TEST_RECEPTOR:2 CLOCK_RECEPTOR:3 shell:4 STREAM_EDGE:5 STREAM_EDGE:6 \n(TICK (TODAY (YEAR:");}
-    __r_kill(G_vm->r);
+    __r_kill(G_vm->ceptr);
 
     _v_join_thread(&G_vm->clock_thread);
     _v_join_thread(&G_vm->vm_thread);
@@ -363,15 +362,15 @@ void testVMHostSerialize() {
     G_vm = _v_new();
     _v_instantiate_builtins(G_vm);
 
-    spec_is_str_equal(t2s(G_vm->r->root),"(SYS_RECEPTOR (DEFINITIONS (STRUCTURES) (SYMBOLS) (PROCESSES) (PROTOCOLS) (SCAPES)) (FLUX (DEFAULT_ASPECT (EXPECTATIONS) (SIGNALS))) (RECEPTOR_STATE) (PENDING_SIGNALS) (PENDING_RESPONSES))");
+    spec_is_str_equal(t2s(G_vm->ceptr->root),"(SYS_RECEPTOR (DEFINITIONS (STRUCTURES) (SYMBOLS) (PROCESSES) (PROTOCOLS) (SCAPES)) (FLUX (DEFAULT_ASPECT (EXPECTATIONS) (SIGNALS))) (RECEPTOR_STATE) (PENDING_SIGNALS) (PENDING_RESPONSES))");
 
     Receptor *clock = G_vm->active_receptors[0].r;
     //   _testReceptorClockAddExpectation(clock);
 
     void *surface;
     size_t length;
-    _r_serialize(G_vm->r,&surface,&length);
-    Receptor *r = _r_unserialize(G_vm->r->sem,surface);
+    _r_serialize(G_vm->ceptr,&surface,&length);
+    Receptor *r = _r_unserialize(G_vm->ceptr->sem,surface);
     spec_is_str_equal(t2s(r->root),"(SYS_RECEPTOR (DEFINITIONS (STRUCTURES) (SYMBOLS) (PROCESSES) (PROTOCOLS) (SCAPES)) (FLUX (DEFAULT_ASPECT (EXPECTATIONS) (SIGNALS))) (RECEPTOR_STATE) (PENDING_SIGNALS) (PENDING_RESPONSES))");
 
     __r_kill(clock);

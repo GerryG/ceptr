@@ -8,7 +8,6 @@
 #include "../src/receptor.h"
 #include "../src/def.h"
 #include "../src/accumulator.h"
-#include "../src/vmhost.h"
 #include "../src/protocol.h"
 #include "http_example.h"
 #include <unistd.h>
@@ -647,7 +646,7 @@ void testReceptorEdgeStream() {
     Stream *writer_stream = _st_new_unix_stream(ws,0);
 
     Receptor *r = _r_makeStreamEdgeReceptor(v->sem);
-    Xaddr edge = _v_new_receptor(v,v->r,STREAM_EDGE,r);
+    Xaddr edge = _v_new_receptor(v,v->ceptr,STREAM_EDGE,r);
     _r_addWriter(r,writer_stream,DEFAULT_ASPECT);
     _r_addReader(r,reader_stream,r->addr,DEFAULT_ASPECT,LINE,LINE,false);
 
@@ -715,7 +714,7 @@ void *_ltester(void *arg) {
 void testReceptorEdgeListener() {
     VMHost *v = _v_new();
     Receptor *r = _r_makeStreamEdgeReceptor(v->sem);
-    Xaddr edge = _v_new_receptor(v,v->r,STREAM_EDGE,r);
+    Xaddr edge = _v_new_receptor(v,v->ceptr,STREAM_EDGE,r);
 
     /*
       (RUN_TREE
@@ -773,7 +772,7 @@ void testReceptorEdgeListener() {
         raise_error("Error detaching tester thread; return code from pthread_detach() is %d\n", rc);
     }
     while(!G_done) sleepms(1);
-    __r_kill(v->r);
+    __r_kill(v->ceptr);
     _v_join_thread(&v->vm_thread);
 
     debug_disable(D_STREAM+D_SOCKET+D_SIGNALS+D_STEP+D_REDUCE+D_REDUCEV);

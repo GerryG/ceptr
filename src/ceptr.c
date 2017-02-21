@@ -5,11 +5,8 @@
  * @brief implements main() entry point for the ceptr node
  */
 
-#include "ceptr.h"
-#include "accumulator.h"
+#include "sys_defs.h"
 #include "shell.h"
-#include "protocol.h"
-#include <stdio.h>
 
 void setupHTTP(VMHost *v) {
 
@@ -19,7 +16,7 @@ void setupHTTP(VMHost *v) {
     // create empty edge receptor
     Receptor *r = _r_makeStreamEdgeReceptor(v->sem);
     // instantiate it in the vmhost
-    Xaddr edge = _v_new_receptor(v,v->r,STREAM_EDGE,r);
+    Xaddr edge = _v_new_receptor(v,v->ceptr,STREAM_EDGE,r);
     // set up a socket listener that will transcode ascii to HTTP_REQUEST and send all the received requests to an HTTP aspect on the same receptor
     T *code = _t_parse(r->sem,0,"(CONVERSE (SCOPE (ITERATE (PARAMS) (STREAM_ALIVE (PARAM_REF:/2/1)) (INITIATE_PROTOCOL (PNAME:HTTP) (WHICH_INTERACTION:backnforth) (PROTOCOL_BINDINGS (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_CLIENT) %)) (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_SERVER) %)) (RESOLUTION (WHICH_PROCESS (GOAL:RESPONSE_HANDLER) (ACTUAL_PROCESS:echo2stream))) (RESOLUTION (WHICH_USAGE (USAGE:RESPONSE_HANDLER_PARAMETERS) (ACTUAL_VALUE (PARAM_REF:/2/1)))) (RESOLUTION (WHICH_VALUE (ACTUAL_SYMBOL:HTTP_REQUEST) (ACTUAL_VALUE (STREAM_READ (PARAM_REF:/2/1) (RESULT_SYMBOL:HTTP_REQUEST)))))) ) ) (STREAM_CLOSE (PARAM_REF:/2/1))) (BOOLEAN:1))",__r_make_addr(0,ACTUAL_RECEPTOR,r->addr),__r_make_addr(0,ACTUAL_RECEPTOR,r->addr));
     // add an error handler that just completes the iteration
@@ -65,7 +62,7 @@ int main(int argc, const char **argv) {
 
     _v_start_vmhost(G_vm);
 
-    while (G_vm->r->state == Alive) {
+    while (G_vm->ceptr->state == Alive) {
         sleepms(100);
     };
 

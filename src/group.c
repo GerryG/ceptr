@@ -9,8 +9,6 @@
  */
 
 #include "group.h"
-#include "protocol.h"
-#include "debug.h"
 
 #define C_authChanId 1
 
@@ -136,10 +134,10 @@ _o_make_protocol_def(sem,"talk",
 
 
 Receptor *makeGroup(VMHost *v,char *label) {
-    SemTable *sem = v->r->sem;
+    SemTable *sem = v->ceptr->sem;
     Symbol group = _d_define_receptor(sem,label,__r_make_definitions(),DEV_COMPOSITORY_CONTEXT);
     Receptor *r = _r_new(sem,group);
-    Xaddr groupx = _v_new_receptor(v,v->r,group,r);
+    Xaddr groupx = _v_new_receptor(v,v->ceptr,group,r);
     _v_activate(v,groupx);
     //debug_enable(D_PROTOCOL);
     _o_express_role(r,group1,GROUP,DEFAULT_ASPECT,NULL);

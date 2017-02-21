@@ -9,10 +9,8 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "mtree.h"
-#include "ceptr_error.h"
+#include "ceptr.h"
 #include "hashfn.h"
-#include "def.h"
 
 const H null_H = {0,{NULL_ADDR,NULL_ADDR}};
 

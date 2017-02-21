@@ -8,16 +8,10 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "tree.h"
-#include "def.h"
-#include "receptor.h"
-
-#include "base_defs.h"
 #include <stdarg.h>
 #include <glob.h>
 
-#include "util.h"
-#include "debug.h"
+#include "sys_defs.h"
 
 const Symbol NULL_SYMBOL = {0,SEM_TYPE_SYMBOL,0};
 const Structure NULL_STRUCTURE = {0,SEM_TYPE_STRUCTURE,0};
@@ -101,6 +95,19 @@ T *sT_(SemTable *sem,Symbol sym,int num_params,...){
     }
     va_end(params);
     return set;
+}
+
+void load_context(char *path, Receptor *parent);
+void load_contexts(SemTable *sem);
+
+void load_system(VMHost *vm) {
+    load_contexts(vm->sem);
+
+    _v_add_receptor(vm, vm->ceptr, COMPOSITORY);
+    _v_add_receptor(vm, vm->ceptr, DEV_COMPOSITORY);
+    _v_add_receptor(vm, vm->ceptr, TEST_RECEPTOR);
+
+    _r_defineClockReceptor(vm->sem);
 }
 
 void load_contexts(SemTable *sem) {

@@ -68,6 +68,7 @@ sub addDef {
     }
 }
 
+# this is ugly, should be in data source or factored out
 sub makeName {
     my $n = shift;
     $n =~ s/sT_SYM\(([^)]+)\)/$1/g;
