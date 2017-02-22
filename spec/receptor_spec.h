@@ -178,7 +178,7 @@ void testReceptorResponseDeliver() {
     // set up receptor to have sent a signal and blocked waiting for the response
     T *t = _t_new_root(RUN_TREE);
     T *p = _t_new_root(NOOP);
-    T *req = _t_newr(p,REQUEST);
+    T *req = _t_new_node(p,REQUEST);
     __r_make_addr(req,TO_ADDRESS,tt);
     _t_news(req,ASPECT_IDENT,DEFAULT_ASPECT);
     _t_news(req,CARRIER,TESTING);
@@ -209,7 +209,7 @@ void testReceptorResponseDeliver() {
 
     // get the original signal uuid from the run tree
     UUIDt response_id = *(UUIDt *)_t_surface(_t_child(_t_child(rt,1),1));
-    T *s = __r_make_signal(from,to,DEFAULT_ASPECT,TESTING,_t_new_str(0,TEST_STR_SYMBOL,"foo"),&response_id,0,0);
+    T *s = __r_make_signal(from,to,DEFAULT_ASPECT,TESTING,_t_new_string(0,TEST_STR_SYMBOL,"foo"),&response_id,0,0);
 
     //    debug_enable(D_SIGNALS);
     spec_is_equal(_r_deliver(r,s),noDeliveryErr);
@@ -231,7 +231,7 @@ void testReceptorResponseDeliver() {
 
 void testReceptorEndCondition() {
     T *until = _t_new_root(END_CONDITIONS);
-    _t_newr(until,UNLIMITED);
+    _t_new_node(until,UNLIMITED);
     bool cleanup,allow;
     evaluateEndCondition(until,&cleanup,&allow);
     spec_is_false(cleanup);spec_is_true(allow);
@@ -283,9 +283,9 @@ void testReceptorExpectation() {
     T *req = parseSemtrex(G_sem,stx);
     _t_add(pattern,req);
 /*    T *req = _t_news(pattern,SEMTREX_SYMBOL_LITERAL,HTTP_REQUEST);
-    T *seq = _t_newr(req,SEMTREX_SEQUENCE);
-    _t_newr(seq,SEMTREX_SYMBOL_ANY);  // skips the Version
-    _t_newr(seq,SEMTREX_SYMBOL_ANY);  // skips over the Method
+    T *seq = _t_new_node(req,SEMTREX_SEQUENCE);
+    _t_new_node(seq,SEMTREX_SYMBOL_ANY);  // skips the Version
+    _t_new_node(seq,SEMTREX_SYMBOL_ANY);  // skips over the Method
     T *path = _t_news(seq,SEMTREX_SYMBOL_LITERAL,HTTP_REQUEST_PATH);
     T *segs = _t_news(path,SEMTREX_SYMBOL_LITERAL,HTTP_REQUEST_PATH_SEGMENTS);
     T *g = _t_news(segs,SEMTREX_GROUP,HTTP_REQUEST_PATH_SEGMENT);
@@ -614,14 +614,14 @@ void testReceptorNums() {
 
     // create a home location tree
     T *t = _t_new_root(home_location);
-    T *lat = _t_newr(t,latitude);
-    T *lon = _t_newr(t,longitude);
-    T *m = _t_newr(lat,mantissa);
-    T *e = _t_newr(lat,exponent);
+    T *lat = _t_new_node(t,latitude);
+    T *lon = _t_new_node(t,longitude);
+    T *m = _t_new_node(lat,mantissa);
+    T *e = _t_new_node(lat,exponent);
     makeInt(m,22);
     makeInt(e,1);
-    m = _t_newr(lon,mantissa);
-    e = _t_newr(lon,exponent);
+    m = _t_new_node(lon,mantissa);
+    e = _t_new_node(lon,exponent);
     makeInt(m,1);
     makeInt(e,2);
     spec_is_str_equal(_td(r,t),"(home_location (latitude (mantissa (exp0:0) (exp1:1) (exp2:1) (exp3:0) (exp4:1) (exp5:0) (exp6:0) (exp7:0) (exp8:0) (exp9:0) (exp10:0) (exp11:0) (exp12:0) (exp13:0) (exp14:0) (exp15:0)) (exponent (exp0:1) (exp1:0) (exp2:0) (exp3:0) (exp4:0) (exp5:0) (exp6:0) (exp7:0) (exp8:0) (exp9:0) (exp10:0) (exp11:0) (exp12:0) (exp13:0) (exp14:0) (exp15:0))) (longitude (mantissa (exp0:1) (exp1:0) (exp2:0) (exp3:0) (exp4:0) (exp5:0) (exp6:0) (exp7:0) (exp8:0) (exp9:0) (exp10:0) (exp11:0) (exp12:0) (exp13:0) (exp14:0) (exp15:0)) (exponent (exp0:0) (exp1:1) (exp2:0) (exp3:0) (exp4:0) (exp5:0) (exp6:0) (exp7:0) (exp8:0) (exp9:0) (exp10:0) (exp11:0) (exp12:0) (exp13:0) (exp14:0) (exp15:0))))");
@@ -800,16 +800,16 @@ void testReceptorClock() {
     // send the clock receptor a "tell me the time" request by initiating the tell_time interaction in the protocol
 
     T *bindings = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_RECEPTOR);
+    T *res = _t_new_node(bindings,RESOLUTION);
+    T *w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,TIME_TELLER);
     __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,TIME_HEARER);
     __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_PROCESS);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_PROCESS);
     _t_news(w,GOAL,RESPONSE_HANDLER);
 
     // @todo bleah, this should be a better proc, at least with a SIGNAL_REF

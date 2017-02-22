@@ -17,12 +17,12 @@ void testGroupCreate() {
 
     // bindings for m to request membership
     T *bindings = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_RECEPTOR);
+    T *res = _t_new_node(bindings,RESOLUTION);
+    T *w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,GROUP);
     __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,MEMBER);
     __r_make_addr(w,ACTUAL_RECEPTOR,m->addr);
 
@@ -50,11 +50,11 @@ void testGroupCreate() {
     spec_is_str_equal(t2s(t),"(ITERATION_DATA (MEMBER (RECEPTOR_ADDR:4)))");
     _t_free(t);
 
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_VALUE);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_VALUE);
     _t_news(w,USAGE,MESSAGE_TEXT);
-    T *val = _t_newr(w,ACTUAL_VALUE);
-    val = _t_new_str(val,MESSAGE_TEXT,"hi there!");
+    T *val = _t_new_node(w,ACTUAL_VALUE);
+    val = _t_new_string(val,MESSAGE_TEXT,"hi there!");
 
 
     //debug_enable(D_PROTOCOL+D_SIGNALS+D_TREE);

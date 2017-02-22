@@ -36,34 +36,34 @@ void testVMHostCreate() {
 /* //! [makeTestReceptorPackage] */
 /* T *_makeTestHTTPServerReceptorPackage() { */
 /*     T *p = _t_new_root(RECEPTOR_PACKAGE); */
-/*     T *m = _t_newr(p,MANIFEST); // specification for which manifest variables can be configured */
+/*     T *m = _t_new_node(p,MANIFEST); // specification for which manifest variables can be configured */
 
 /*     _t_newi(p,RECEPTOR_IDENTIFIER,HTTP_SERVER_RECEPTOR_UUID); */
-/*     T *defs = _t_newr(p,DEFINITIONS); */
+/*     T *defs = _t_new_node(p,DEFINITIONS); */
 /*     _t_add(defs,_t_clone(test_HTTP_structures)); */
 /*     _t_add(defs,_t_clone(test_HTTP_symbols)); */
 
-/*     T *procs = _t_newr(defs,PROCESSES); */
+/*     T *procs = _t_new_node(defs,PROCESSES); */
 /*     // initialization process installs the listener for host registration */
 /*     //@todo for now we fake this, but adding it manually as c code in the install example */
 
-/*     _t_newr(defs,SCAPES); // for now we don't have any scapes */
+/*     _t_new_node(defs,SCAPES); // for now we don't have any scapes */
 
 /*     // server must be instantiated in the context of an octet stream input and output carriers */
-/*     T *aspects = _t_newr(p,ASPECTS); */
-/*     T *a = _t_newr(aspects,ASPECT_DEF); */
+/*     T *aspects = _t_new_node(p,ASPECTS); */
+/*     T *a = _t_new_node(aspects,ASPECT_DEF); */
 /*     _t_newi(a,EXTERNAL_ASPECT,DEFAULT_ASPECT); */
 /*     _t_newi(a,CARRIER,OCTET_STREAM); */
 /*     _t_newi(a,CARRIER,OCTET_STREAM); */
 
 /*     //@todo internally server speaks to document providers */
-/*     a = _t_newr(aspects,ASPECT_DEF); */
+/*     a = _t_new_node(aspects,ASPECT_DEF); */
 /*     _t_newi(a,INTERNAL_ASPECT,DOCUMENT_PROVIDER); */
 /*     _t_newi(a,CARRIER,DOCUMENT); */
 /*     _t_newi(a,CARRIER,DOCUMENT_PATH); */
 
 /*     //@todo internally server speaks to host registerers */
-/*     a = _t_newr(aspects,ASPECT_DEF); */
+/*     a = _t_new_node(aspects,ASPECT_DEF); */
 /*     _t_newi(a,INTERNAL_ASPECT,HOST_REGISTRY); */
 /*     _t_newi(a,CARRIER,HOST_REGISTRATION_REQUEST); */
 /*     _t_newi(a,CARRIER,HOST_REGISTRATION_RESULT); */
@@ -81,34 +81,34 @@ void testVMHostCreate() {
 /* //! [makeTestHTTPAppReceptorPackage] */
 /* T *_makeTestHTTPAppReceptorPackage() { */
 /*     T *p = _t_new_root(RECEPTOR_PACKAGE); */
-/*     T *m = _t_newr(p,MANIFEST); */
-/*     T *mp = _t_newr(m,MANIFEST_PAIR); */
+/*     T *m = _t_new_node(p,MANIFEST); */
+/*     T *mp = _t_new_node(m,MANIFEST_PAIR); */
 /*     _t_new(mp,MANIFEST_LABEL,"host",5);  // binds to a host value */
 /*     _t_newi(mp,MANIFEST_SPEC,HTTP_REQUEST_HOST); */
-/*     //    T *me = _t_newr(mp,PATTERN); */
+/*     //    T *me = _t_new_node(mp,PATTERN); */
 
 /*     _t_newi(p,RECEPTOR_IDENTIFIER,HELLO_WORLD_UUID); */
 
-/*     T *defs = _t_newr(p,DEFINITIONS); */
+/*     T *defs = _t_new_node(p,DEFINITIONS); */
 /*     _t_add(defs,_t_clone(test_HTTP_structures)); */
 /*     _t_add(defs,_t_clone(test_HTTP_symbols)); */
-/*     T *procs = _t_newr(defs,PROCESSES); */
+/*     T *procs = _t_new_node(defs,PROCESSES); */
 /*     // a process that simply reduces to an HTTP_RESPONSE indicating an off-line status */
 /*     T *resp = _t_new_root(RESPOND); */
 /*     _t_news(resp,CARRIER,HTTP_RESPONSE);*/
-/*     T *http_resp = _t_newr(resp,HTTP_RESPONSE); */
+/*     T *http_resp = _t_new_node(resp,HTTP_RESPONSE); */
 /*     _t_new(http_resp,HTTP_RESPONSE_CONTENT_TYPE,"Text/Plain",11); */
 /*     _t_new(http_resp,TEST_STR_SYMBOL,"Hello World!",13); */
 /*     T *input = _t_new_root(INPUT_SIGNATURES); */
 /*     T *output = _t_new_root(OUTPUT_SIGNATURE); */
 /*     _d_define_process(procs,resp,"hellow","respond with hello",signature); */
 
-/*     _t_newr(defs,SCAPES); // for now we don't have any scapes */
+/*     _t_new_node(defs,SCAPES); // for now we don't have any scapes */
 
 /*     // an hello world app speaks the document provider protocol which operates on */
 /*     // a DOCUMENT_PATH input carrier and a DOCUMENT output carrier */
-/*     T *aspects = _t_newr(p,ASPECTS); */
-/*     T *a = _t_newr(aspects,ASPECT_DEF); */
+/*     T *aspects = _t_new_node(p,ASPECTS); */
+/*     T *a = _t_new_node(aspects,ASPECT_DEF); */
 /*     _t_newi(a,EXTERNAL_ASPECT,DEFAULT_ASPECT); */
 /*     _t_newi(a,CARRIER,DOCUMENT_PATH); */
 /*     _t_newi(a,CARRIER,DOCUMENT); */
@@ -179,7 +179,7 @@ void testVMHostCreate() {
 /*     Xaddr xp = _v_load_receptor_package(v,p); */
 
 /*     T *b = _t_new_root(BINDINGS); */
-/*     T *pair = _t_newr(b,BINDING_PAIR); */
+/*     T *pair = _t_new_node(b,BINDING_PAIR); */
 /*     char *host = "helloworld.com"; */
 
 /*     _t_new(pair,MANIFEST_LABEL,"host",5); */
@@ -216,11 +216,11 @@ void testVMHostCreate() {
 
 /*     // build up an HTTP_REQUEST tree that corresponds with a simple get for host helloworld.com */
 /*     T *s = _t_new_root(HTTP_REQUEST); */
-/*     T *s_version = _t_newr(s,HTTP_REQUEST_VERSION); */
+/*     T *s_version = _t_new_node(s,HTTP_REQUEST_VERSION); */
 /*     _t_newi(s_version,VERSION_MAJOR,1); */
 /*     _t_newi(s_version,VERSION_MINOR,1); */
 /*     T *s_method = _t_new(s,HTTP_REQUEST_METHOD,"GET",4); */
-/*     T *s_path = _t_newr(s,HTTP_REQUEST_PATH); */
+/*     T *s_path = _t_new_node(s,HTTP_REQUEST_PATH); */
 /*     T *s_host = _t_new(s,HTTP_REQUEST_HOST,"helloworld.com",15); */
 
 /*     // put it on the flux to simulate that it has just been parsed out of an octet stream from a TCP/IP receptor */
@@ -259,7 +259,7 @@ void testVMHostActivateReceptor()  {
     Process proc = _r_define_process(client,noop,"do nothing","long desc...",NULL,NULL);
 
     T *binding = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(binding,RESOLUTION);
+    T *res = _t_new_node(binding,RESOLUTION);
     _t_news(res,GOAL,HANDLER);
     _t_news(res,ACTUAL_PROCESS,proc);
     _o_express_role(client,ALIVE,CLIENT,DEFAULT_ASPECT,binding);

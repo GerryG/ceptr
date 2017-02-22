@@ -41,8 +41,8 @@ void testProtocolRecognize() {
 
     // which we add to the bindings
     T *bindings = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_PROCESS);
+    T *res = _t_new_node(bindings,RESOLUTION);
+    T *w = _t_new_node(res,WHICH_PROCESS);
     _t_news(w,GOAL,RECOGNITION);
     _t_news(w,ACTUAL_PROCESS,proc);
 
@@ -64,20 +64,20 @@ void testProtocolRecognize() {
 
     // now create bindings for the RECONIZEE half of the protocols
     bindings = _t_new_root(PROTOCOL_BINDINGS);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,RECOGNIZEE);
     __r_make_addr(w,ACTUAL_RECEPTOR,self->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_PROCESS);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_PROCESS);
     _t_news(w,GOAL,RECOGNITION);
     _t_news(w,ACTUAL_PROCESS,NOOP);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_VALUE);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_VALUE);
     _t_news(w,ACTUAL_SYMBOL,are_you);
-    T *val = _t_newr(w,ACTUAL_VALUE);
-    val = _t_newr(val,are_you);
-    _t_newr(val,SEMTREX_WALK);
+    T *val = _t_new_node(w,ACTUAL_VALUE);
+    val = _t_new_node(val,are_you);
+    _t_new_node(val,SEMTREX_WALK);
 
     spec_is_str_equal(t2s(bindings),"(PROTOCOL_BINDINGS (RESOLUTION (WHICH_RECEPTOR (ROLE:RECOGNIZEE) (ACTUAL_RECEPTOR (RECEPTOR_ADDR:3)))) (RESOLUTION (WHICH_PROCESS (GOAL:RECOGNITION) (ACTUAL_PROCESS:NOOP))) (RESOLUTION (WHICH_VALUE (ACTUAL_SYMBOL:are_you) (ACTUAL_VALUE (are_you (SEMTREX_WALK))))))");
 

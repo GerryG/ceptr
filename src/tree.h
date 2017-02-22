@@ -31,23 +31,23 @@ enum TreeSurfaceFlags {TFLAG_ALLOCATED=0x0001, TFLAG_SURFACE_IS_TREE=0x0002, TFL
 /*****************  Node creation and deletion*/
 TreeNode *__t_new(TreeNode *t, Symbol symbol, void *surface, size_t size, bool is_run_node);
 #define _t_new(p, sy, su, s) __t_new(p, sy, su, s, 0)
-TreeNode *__t_newc(TreeNode *t, Symbol symbol, char c, bool is_run_node);
-#define _t_newc(parent, symbol, c) __t_newc(parent, symbol, c, 0)
-TreeNode *__t_newi(TreeNode *parent, Symbol symbol, int surface, bool is_run_node);
-#define _t_newi(p, sy, su) __t_newi(p, sy, su, 0)
-TreeNode *__t_newi64(TreeNode *parent, Symbol symbol, long surface, bool is_run_node);
-#define _t_newi64(p, sy, su) __t_newi64(p, sy, su, 0)
-TreeNode *__t_news(TreeNode *parent, Symbol symbol, SemanticID surface, bool is_run_node);
-#define _t_news(parent, symbol, surface) __t_news(parent, symbol, surface, 0)
-TreeNode *_t_newt(TreeNode *parent, Symbol symbol, TreeNode *t);
-#define _t_new_str(parent, symbol, str) __t_new_str(parent, symbol, str, 0)
-TreeNode *__t_new_str(TreeNode *parent, Symbol symbol, char *str, bool is_run_node);
+TreeNode *__t_new_char(TreeNode *t, Symbol symbol, char c, bool is_run_node);
+#define _t_new_char(parent, symbol, c) __t_new_char(parent, symbol, c, 0)
+TreeNode *__t_new_int(TreeNode *parent, Symbol symbol, int surface, bool is_run_node);
+#define _t_new_int(p, sy, su) __t_new_int(p, sy, su, 0)
+TreeNode *__t_new_int64(TreeNode *parent, Symbol symbol, long surface, bool is_run_node);
+#define _t_new_int64(p, sy, su) __t_new_int64(p, sy, su, 0)
+TreeNode *__t_new_sym(TreeNode *parent, Symbol symbol, SemanticID surface, bool is_run_node);
+#define _t_new_sym(parent, symbol, surface) __t_new_sym(parent, symbol, surface, 0)
+TreeNode *_t_new_tree(TreeNode *parent, Symbol symbol, TreeNode *t);
+#define _t_new_string(parent, symbol, str) __t_new_string(parent, symbol, str, 0)
+TreeNode *__t_new_string(TreeNode *parent, Symbol symbol, char *str, bool is_run_node);
 TreeNode *_t_new_root(Symbol symbol);
-#define _t_newr(p, s) __t_newr(p, s, 0)
-TreeNode *__t_newr(TreeNode *parent, Symbol symbol, bool is_run_node);
+#define _t_new_node(p, s) __t_new_node(p, s, 0)
+TreeNode *__t_new_node(TreeNode *parent, Symbol symbol, bool is_run_node);
 TreeNode *_t_new_receptor(TreeNode *parent, Symbol symbol, Receptor *r);
 TreeNode *_t_new_scape(TreeNode *parent, Symbol symbol, Scape *s);
-TreeNode *_t_new_cptr(TreeNode *parent, Symbol symbol, void *s);
+TreeNode *_t_new_ceptr(TreeNode *parent, Symbol symbol, void *s);
 TreeNode *_t_newp(TreeNode *parent, Symbol symbol, Process surface);
 
 void _t_add(TreeNode *t, TreeNode *c);

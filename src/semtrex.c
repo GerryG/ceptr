@@ -676,9 +676,9 @@ int __t_match(T *semtrex,T *source_t,T **rP) {
             else {
                 if (!t) FAIL;
 
-                r = _t_newi(r,SEMTREX_MATCH,grp_open->uid);
+                r = _t_new_int(r,SEMTREX_MATCH,grp_open->uid);
                 if (!*rP) *rP = r; // save the root match
-                T *x = _t_news(r,SEMTREX_MATCH_SYMBOL,o->symbol);
+                T *x = _t_new_sym(r,SEMTREX_MATCH_SYMBOL,o->symbol);
                 // save the current cursor as a c cpointer.  This will get converted to
                 // an actual MATCH_PATH later in __fix if it turns out that this particular
                 // part of the tree actually does match.
@@ -1099,21 +1099,21 @@ char * _dump_semtrex(SemTable *sem,T *s,char *buf) {
 
 // helper to add a stx_char value literal to a semtrex
 TreeNode *__stxcv(T *p,char c) {
-    T *t =  _t_newr(p,SEMTREX_VALUE_LITERAL);
-    _t_newc(t,ASCII_CHAR,c);
+    T *t =  _t_new_node(p,SEMTREX_VALUE_LITERAL);
+    _t_new_char(t,ASCII_CHAR,c);
     return t;
 }
 
 // helper to to add a semtrex literal value set of ascii chars to a semtrex
 TreeNode *__stxcvm(T *p,int not,int count,...) {
     va_list chars;
-    T *t =  _t_newr(p,not?SEMTREX_VALUE_LITERAL_NOT:SEMTREX_VALUE_LITERAL);
-    T *v = _t_newr(t,SEMTREX_VALUE_SET);
+    T *t =  _t_new_node(p,not?SEMTREX_VALUE_LITERAL_NOT:SEMTREX_VALUE_LITERAL);
+    T *v = _t_new_node(t,SEMTREX_VALUE_SET);
 
     va_start(chars,count);
     int i;
     for(i=0;i<count;i++) {
-        _t_newc(v,ASCII_CHAR,va_arg(chars,int));
+        _t_new_char(v,ASCII_CHAR,va_arg(chars,int));
     }
     va_end(chars);
 
@@ -1122,12 +1122,12 @@ TreeNode *__stxcvm(T *p,int not,int count,...) {
 
 // helper to add a bunch of semtrex ors that match a character set
 void _stxcs(T *stxx,char *an) {
-    T *label = _t_newr(stxx,SEMTREX_ONE_OR_MORE);
-    label = _t_newr(label,SEMTREX_OR);
+    T *label = _t_new_node(stxx,SEMTREX_ONE_OR_MORE);
+    label = _t_new_node(label,SEMTREX_OR);
     while(*an) {
         __stxcv(label,*an);
         an++;
-        if (*an) label = _t_newr(label,SEMTREX_OR);
+        if (*an) label = _t_new_node(label,SEMTREX_OR);
     }
     __stxcv(label,'_');
 }
@@ -1204,7 +1204,7 @@ TreeNode *wrap(T *tokens,TreeNode *results, Symbol contents_s, Symbol open_s) {
 TreeNode *makeASCIITree(char *c) {
     T *s = _t_new_root(ASCII_CHARS);
     while(*c) {
-        _t_newc(s,ASCII_CHAR,*c);
+        _t_new_char(s,ASCII_CHAR,*c);
         c++;
     }
     return s;
@@ -1231,7 +1231,7 @@ char *_asciiT2str(T* asciiT,T* match,T *t,char *buf) {
 TreeNode *asciiT_toi(T* asciiT,T* match,T *t,Symbol s) {
     char buf[10];
     _asciiT2str(asciiT,match,t,buf);
-    return _t_newi(t,s,atoi(buf));
+    return _t_new_int(t,s,atoi(buf));
 }
 
 /**
@@ -1240,7 +1240,7 @@ TreeNode *asciiT_toi(T* asciiT,T* match,T *t,Symbol s) {
 TreeNode *asciiT_tol(T* asciiT,T* match,T *t,Symbol s) {
     char buf[12];
     _asciiT2str(asciiT,match,t,buf);
-    return _t_newi64(t,s,atol(buf));
+    return _t_new_int64(t,s,atol(buf));
 }
 
 /**
@@ -1259,7 +1259,7 @@ TreeNode *asciiT_tof(T* asciiT,T* match,T *t,Symbol s) {
 TreeNode *asciiT_tos(T* asciiT,T* match,T *t,Symbol s) {
     char buf[255];
     _asciiT2str(asciiT,match,t,buf);
-    return _t_new_str(t,s,buf);
+    return _t_new_string(t,s,buf);
 }
 
 /**
@@ -1268,7 +1268,7 @@ TreeNode *asciiT_tos(T* asciiT,T* match,T *t,Symbol s) {
 TreeNode *asciiT_toc(T* asciiT,T* match,T *t,Symbol s) {
     int *path = (int *)_t_surface(_t_child(match,2));
     int c = *(int *)_t_surface(_t_get(asciiT,path));
-    return _t_newc(t,s,c);
+    return _t_new_char(t,s,c);
 }
 
 /**
@@ -1276,12 +1276,12 @@ TreeNode *asciiT_toc(T* asciiT,T* match,T *t,Symbol s) {
  */
 TreeNode *__sl(T *p, bool not,int count, ...) {
     va_list symbols;
-    T *t = _t_newr(p,not ? SEMTREX_SYMBOL_LITERAL_NOT : SEMTREX_SYMBOL_LITERAL);
-    T *ss = count > 1 ?  _t_newr(t,SEMTREX_SYMBOL_SET) : t;
+    T *t = _t_new_node(p,not ? SEMTREX_SYMBOL_LITERAL_NOT : SEMTREX_SYMBOL_LITERAL);
+    T *ss = count > 1 ?  _t_new_node(t,SEMTREX_SYMBOL_SET) : t;
     va_start(symbols,count);
     int i;
     for(i=0;i<count;i++) {
-        _t_news(ss,SEMTREX_SYMBOL,va_arg(symbols,Symbol));
+        _t_new_sym(ss,SEMTREX_SYMBOL,va_arg(symbols,Symbol));
     }
     va_end(symbols);
     return t;
@@ -1306,118 +1306,118 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
     // build the token stream out of an ascii stream
     // PATTERN
     // "/{STX_TOKENS:(ASCII_CHARS/({STX_SL:ASCII_CHAR='/'})|(({STX_OP:ASCII_CHAR='('})|(({STX_CP:ASCII_CHAR=')'})|(({STX_PLUS:ASCII_CHAR='+'})|(({STX_COMMA:ASCII_CHAR=','})|((ASCII_CHAR='!',{STX_EXCEPT:[a-zA-Z0-9_]+})|(({STX_CG:ASCII_CHAR='}'})|(({STX_STAR:ASCII_CHAR='*'})|(({STX_LABEL:[a-zA-Z0-9_]+})|(ASCII_CHAR='{',{STX_OG:[a-zA-Z0-9_]+},ASCII_CHAR=':')))))))))+)}
-    TreeNode *ts = _t_news(0,SEMTREX_GROUP,STX_TOKENS);
+    TreeNode *ts = _t_new_sym(0,SEMTREX_GROUP,STX_TOKENS);
     TreeNode *g = _sl(ts,ASCII_CHARS);
-    TreeNode *sq = _t_newr(g,SEMTREX_SEQUENCE);
-    TreeNode *p = _t_newr(sq,SEMTREX_ONE_OR_MORE);
-    TreeNode *or_node = _t_newr(p,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_WALK);
+    TreeNode *sq = _t_new_node(g,SEMTREX_SEQUENCE);
+    TreeNode *p = _t_new_node(sq,SEMTREX_ONE_OR_MORE);
+    TreeNode *or_node = _t_new_node(p,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_WALK);
     __stxcv(t,'%');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(o,SEMTREX_GROUP,STX_SL);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(o,SEMTREX_GROUP,STX_SL);
     __stxcv(t,'/');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(o,SEMTREX_GROUP,STX_OP);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(o,SEMTREX_GROUP,STX_OP);
     __stxcv(t,'(');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_CP);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_CP);
     __stxcv(t,')');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_OR);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_OR);
     __stxcv(t,'|');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_COMMA);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_COMMA);
     __stxcv(t,',');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_CG);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_CG);
     __stxcv(t,'>');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,SEMTREX_SYMBOL_ANY);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,SEMTREX_SYMBOL_ANY);
     __stxcv(t,'.');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_STAR);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_STAR);
     __stxcv(t,'*');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_PLUS);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_PLUS);
     __stxcv(t,'+');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_Q);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_Q);
     __stxcv(t,'?');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_NOT);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_NOT);
     __stxcv(t,'~');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
-    t = _t_news(sq,SEMTREX_GROUP,STX_EQ);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_EQ);
     _stxl(t);
     __stxcv(sq,'=');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
-    t = _t_news(sq,SEMTREX_GROUP,STX_NEQ);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_NEQ);
     _stxl(t);
     __stxcv(sq,'!');
     __stxcv(sq,'=');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
     __stxcv(sq,'\'');
-    t = _t_news(sq,SEMTREX_GROUP,STX_VAL_C);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_VAL_C);
     _sl(t,ASCII_CHAR);
     __stxcv(sq,'\'');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
     __stxcv(sq,'"');
-    t = _t_news(sq,SEMTREX_GROUP,STX_VAL_S);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_VAL_S);
     _stxl(t);
     __stxcv(sq,'"');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_OS);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_OS);
     __stxcv(t,'{');
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_CS);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_CS);
     __stxcv(t,'}');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
     __stxcv(sq,'!');
-    t = _t_news(sq,SEMTREX_GROUP,STX_EXCEPT);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_EXCEPT);
     _stxl(t);
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
-    t = _t_news(sq,SEMTREX_GROUP,STX_EXCEPT);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_EXCEPT);
     __stxcv(t,'!');
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
-    t = _t_news(sq,SEMTREX_GROUP,STX_VAL_F);
-    T *sq2 = _t_newr(t,SEMTREX_SEQUENCE);
-    t = _t_newr(sq2,SEMTREX_ZERO_OR_MORE);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_VAL_F);
+    T *sq2 = _t_new_node(t,SEMTREX_SEQUENCE);
+    t = _t_new_node(sq2,SEMTREX_ZERO_OR_MORE);
     _stxcs(t,"0123456789");
     __stxcv(sq2,'.');
-    t = _t_newr(sq2,SEMTREX_ONE_OR_MORE);
+    t = _t_new_node(sq2,SEMTREX_ONE_OR_MORE);
     _stxcs(t,"0123456789");
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
-    t = _t_news(sq,SEMTREX_GROUP,STX_VAL_I);
-    t = _t_newr(t,SEMTREX_ONE_OR_MORE);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_VAL_I);
+    t = _t_new_node(t,SEMTREX_ONE_OR_MORE);
     _stxcs(t,"0123456789");
 
-    or_node = _t_newr(or_node,SEMTREX_OR);
-    t = _t_news(or_node,SEMTREX_GROUP,STX_LABEL);
+    or_node = _t_new_node(or_node,SEMTREX_OR);
+    t = _t_new_sym(or_node,SEMTREX_GROUP,STX_LABEL);
     _stxl(t);
 
-    //  or_node = _t_newr(or_node,SEMTREX_OR);
-    sq = _t_newr(or_node,SEMTREX_SEQUENCE);
+    //  or_node = _t_new_node(or_node,SEMTREX_OR);
+    sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
     __stxcv(sq,'<');
-    t = _t_news(sq,SEMTREX_GROUP,STX_OG);
+    t = _t_new_sym(sq,SEMTREX_GROUP,STX_OG);
     _stxl(t);
     __stxcv(sq,':');
 
@@ -1448,7 +1448,7 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
                 asciiT_tof(s,c,tokens,ts);
             }
             else
-                _t_newi(tokens,ts,0);
+                _t_new_int(tokens,ts,0);
         }
         _t_free(results);
 
@@ -1460,11 +1460,11 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // /%<STX_OS:STX_OS,<STX_SET:!{STX_OS,STX_CS}+>,STX_CS>
 
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,STX_OS);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,STX_OS);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
         _sl(sq,STX_OS);
-        t = _t_news(sq,SEMTREX_GROUP,STX_SET);
-        t = _t_newr(t,SEMTREX_ONE_OR_MORE);
+        t = _t_new_sym(sq,SEMTREX_GROUP,STX_SET);
+        t = _t_new_node(t,SEMTREX_ONE_OR_MORE);
 
         __sl(t,1,2,STX_OS,STX_CS);
         _sl(sq,STX_CS);
@@ -1498,20 +1498,20 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%<SEMTREX_VALUE_LITERAL:STX_EQ|STX_NEQ,<SEMTREX_VALUE_SET:STX_VAL_I|STX_VAL_F|STX_VAL_S|STX_VAL_C|STX_SET)>>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,SEMTREX_VALUE_LITERAL);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
-        or_node = _t_newr(sq,SEMTREX_OR);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,SEMTREX_VALUE_LITERAL);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
+        or_node = _t_new_node(sq,SEMTREX_OR);
         _sl(or_node,STX_EQ);
         _sl(or_node,STX_NEQ);
 
-        g = _t_news(sq,SEMTREX_GROUP,SEMTREX_VALUE_SET);
-        or_node = _t_newr(g,SEMTREX_OR);
+        g = _t_new_sym(sq,SEMTREX_GROUP,SEMTREX_VALUE_SET);
+        or_node = _t_new_node(g,SEMTREX_OR);
         _sl(or_node,STX_VAL_I);
-        or_node = _t_newr(or_node,SEMTREX_OR);
+        or_node = _t_new_node(or_node,SEMTREX_OR);
         _sl(or_node,STX_VAL_F);
-        or_node = _t_newr(or_node,SEMTREX_OR);
+        or_node = _t_new_node(or_node,SEMTREX_OR);
         _sl(or_node,STX_VAL_S);
-        or_node = _t_newr(or_node,SEMTREX_OR);
+        or_node = _t_new_node(or_node,SEMTREX_OR);
         _sl(or_node,STX_VAL_C);
         _sl(or_node,STX_SET);
 
@@ -1547,7 +1547,7 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
                 _t_add(t,set);
             }
             else {
-                //              set = _t_newr(t,SEMTREX_VALUE_SET);
+                //              set = _t_new_node(t,SEMTREX_VALUE_SET);
                 char *symbol_name = (char *)_t_surface(t);
                 Symbol next_sib_sym = get_symbol(symbol_name,sem);
                 // convert the STX_VAL structure token to the semantic type specified by the value literal
@@ -1567,14 +1567,14 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /STX_TOKENS/.*,<STX_OP:STX_OP,<STX_SIBS:!{STX_CP,STX_OP}+>,STX_CP>
         sxx = _sl(0,STX_TOKENS);
-        sq = _t_newr(sxx,SEMTREX_SEQUENCE);
-        T *st = _t_newr(sq,SEMTREX_ZERO_OR_MORE);
-        _t_newr(st,SEMTREX_SYMBOL_ANY);
-        T *gg = _t_news(sq,SEMTREX_GROUP,STX_OP);
-        T *sq1 = _t_newr(gg,SEMTREX_SEQUENCE);
+        sq = _t_new_node(sxx,SEMTREX_SEQUENCE);
+        T *st = _t_new_node(sq,SEMTREX_ZERO_OR_MORE);
+        _t_new_node(st,SEMTREX_SYMBOL_ANY);
+        T *gg = _t_new_sym(sq,SEMTREX_GROUP,STX_OP);
+        T *sq1 = _t_new_node(gg,SEMTREX_SEQUENCE);
         _sl(sq1,STX_OP);
-        T *g = _t_news(sq1,SEMTREX_GROUP,STX_SIBS);
-        T *any = _t_newr(g,SEMTREX_ONE_OR_MORE);
+        T *g = _t_new_sym(sq1,SEMTREX_GROUP,STX_SIBS);
+        T *any = _t_new_node(g,SEMTREX_ONE_OR_MORE);
         __sl(any,1,2,STX_OP,STX_CP);
         _sl(sq1,STX_CP);
 
@@ -1595,11 +1595,11 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%,<STX_OG:STX_OG,<SEMTREX_GROUP:!{STX_CG,STX_OG}+>,STX_CG>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,STX_OG);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,STX_OG);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
         _sl(sq,STX_OG);
-        gg = _t_news(sq,SEMTREX_GROUP,SEMTREX_GROUP);
-        any = _t_newr(gg,SEMTREX_ONE_OR_MORE);
+        gg = _t_new_sym(sq,SEMTREX_GROUP,SEMTREX_GROUP);
+        any = _t_new_node(gg,SEMTREX_ONE_OR_MORE);
 
         __sl(any,1,2,STX_OG,STX_CG);
         _sl(sq,STX_CG);
@@ -1625,10 +1625,10 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /(STX_TOKENS/.*,(STX_OP)|(STX_CP))
         sxx = _sl(0,STX_TOKENS);
-        sq = _t_newr(sxx,SEMTREX_SEQUENCE);
-        st = _t_newr(sq,SEMTREX_ZERO_OR_MORE);
-        _t_newr(st,SEMTREX_SYMBOL_ANY);
-        or_node = _t_newr(sq,SEMTREX_OR);
+        sq = _t_new_node(sxx,SEMTREX_SEQUENCE);
+        st = _t_new_node(sq,SEMTREX_ZERO_OR_MORE);
+        _t_new_node(st,SEMTREX_SYMBOL_ANY);
+        or_node = _t_new_node(sq,SEMTREX_OR);
         _sl(or_node,STX_OP);
         _sl(or_node,STX_CP);
 
@@ -1644,12 +1644,12 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /*<STX_POSTFIX:.,STX_PLUS|STX_STAR|STX_Q>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,STX_POSTFIX);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
-        _t_newr(sq,SEMTREX_SYMBOL_ANY);
-        or_node = _t_newr(sq,SEMTREX_OR);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,STX_POSTFIX);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
+        _t_new_node(sq,SEMTREX_SYMBOL_ANY);
+        or_node = _t_new_node(sq,SEMTREX_OR);
         _sl(or_node,STX_PLUS);
-        or_node = _t_newr(or_node,SEMTREX_OR);
+        or_node = _t_new_node(or_node,SEMTREX_OR);
         _sl(or_node,STX_STAR);
         _sl(or_node,STX_Q);
 
@@ -1683,10 +1683,10 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%<SEMTREX_NOT:STX_NOT,.>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,SEMTREX_NOT);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,SEMTREX_NOT);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
         _sl(sq,STX_NOT);
-        _t_newr(sq,SEMTREX_SYMBOL_ANY);
+        _t_new_node(sq,SEMTREX_SYMBOL_ANY);
 
         //----------------
         // ACTION
@@ -1714,11 +1714,11 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%.*,<STX_CHILD:STX_LABEL,STX_SL,!STX_SL>
         sxx = _t_new_root(SEMTREX_WALK);
-        sq = _t_newr(sxx,SEMTREX_SEQUENCE);
-        any = _t_newr(sq,SEMTREX_ZERO_OR_MORE);
-        _t_newr(any,SEMTREX_SYMBOL_ANY);
-        g = _t_news(sq,SEMTREX_GROUP,STX_CHILD);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
+        sq = _t_new_node(sxx,SEMTREX_SEQUENCE);
+        any = _t_new_node(sq,SEMTREX_ZERO_OR_MORE);
+        _t_new_node(any,SEMTREX_SYMBOL_ANY);
+        g = _t_new_sym(sq,SEMTREX_GROUP,STX_CHILD);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
         _sl(sq,STX_LABEL);
         _sl(sq,STX_SL);
         _sln(sq,STX_SL);
@@ -1753,11 +1753,11 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // /%<SEMTREX_SYMBOL_LITERAL:STX_EXCEPT="!"?,STX_SET>
 
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,SEMTREX_SYMBOL_LITERAL);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
-        t = _t_newr(sq,SEMTREX_ZERO_OR_ONE);
-        t =  _t_newr(t,SEMTREX_VALUE_LITERAL);
-        t = _t_newr(t,SEMTREX_VALUE_SET);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,SEMTREX_SYMBOL_LITERAL);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
+        t = _t_new_node(sq,SEMTREX_ZERO_OR_ONE);
+        t =  _t_new_node(t,SEMTREX_VALUE_LITERAL);
+        t = _t_new_node(t,SEMTREX_VALUE_SET);
         _t_new(t,STX_EXCEPT,"!",2);
         _sl(sq,STX_SET);
         //----------------
@@ -1797,8 +1797,8 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%<SEMTREX_SYMBOL_LITERAL:STX_LABEL|STX_EXCEPT>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,SEMTREX_SYMBOL_LITERAL);
-        or_node = _t_newr(g,SEMTREX_OR);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,SEMTREX_SYMBOL_LITERAL);
+        or_node = _t_new_node(g,SEMTREX_OR);
         _sl(or_node,STX_LABEL);
         _sl(or_node,STX_EXCEPT);
         //----------------
@@ -1810,7 +1810,7 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
             char *symbol_name = (char *)_t_surface(t);
             Symbol sy = get_symbol(symbol_name,sem);
             t->contents.symbol = semeq(t->contents.symbol,STX_LABEL)?SEMTREX_SYMBOL_LITERAL:SEMTREX_SYMBOL_LITERAL_NOT;
-            T *ss = _t_news(0,SEMTREX_SYMBOL,sy);
+            T *ss = _t_new_sym(0,SEMTREX_SYMBOL,sy);
             int pp[2] = {1,TREE_PATH_TERMINATOR};
             _t_insert_at(t,pp,ss);
 
@@ -1825,11 +1825,11 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /*<SEMTREX_SEQUENCE:(!STX_COMMA,STX_COMMA)+,!STX_COMMA>  ->  SEMTREX_SEQUENCE
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,SEMTREX_SEQUENCE);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
-        or_node = _t_newr(sq,SEMTREX_ONE_OR_MORE);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,SEMTREX_SEQUENCE);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
+        or_node = _t_new_node(sq,SEMTREX_ONE_OR_MORE);
         _sln(sq,STX_COMMA);
-        sq = _t_newr(or_node,SEMTREX_SEQUENCE);
+        sq = _t_new_node(or_node,SEMTREX_SEQUENCE);
         _sln(sq,STX_COMMA);
         _sl(sq,STX_COMMA);
 
@@ -1868,8 +1868,8 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%<SEMTREX_OR:!STX_OR,STX_OR,!STX_OR>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,SEMTREX_OR);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,SEMTREX_OR);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
         _sln(sq,STX_OR);
         _sl(sq,STX_OR);
         _sln(sq,STX_OR);
@@ -1902,10 +1902,10 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%<SEMTREX_WALK:STX_WALK,.>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,SEMTREX_WALK);
-        sq = _t_newr(g,SEMTREX_SEQUENCE);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,SEMTREX_WALK);
+        sq = _t_new_node(g,SEMTREX_SEQUENCE);
         _sl(sq,STX_WALK);
-        _t_newr(sq,SEMTREX_SYMBOL_ANY);
+        _t_new_node(sq,SEMTREX_SYMBOL_ANY);
         //----------------
         // ACTION
         while (_t_matchr(sxx,tokens,&results)) {
@@ -1930,7 +1930,7 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
         // PATTERN
         // /%<STX_SIBS:STX_SIBS>
         sxx = _t_new_root(SEMTREX_WALK);
-        g = _t_news(sxx,SEMTREX_GROUP,STX_SIBS);
+        g = _t_new_sym(sxx,SEMTREX_GROUP,STX_SIBS);
         _sl(g,STX_SIBS);
         //----------------
         // ACTION
@@ -1975,11 +1975,11 @@ TreeNode *parseSemtrex(SemTable *sem,char *stx) {
 
 // recursable implementation of _stx_results2sem_map
 void __stx_r2fi(SemTable *sem,T *mr,T *mt, T *sem_map) {
-    T *t = _t_newr(sem_map,SEMANTIC_LINK);
+    T *t = _t_new_node(sem_map,SEMANTIC_LINK);
     T *match_symbol =  _t_child(mr,SemtrexMatchSymbolIdx);
     Symbol msym = *(Symbol*)_t_surface(match_symbol);
-    _t_news(t,USAGE,msym);
-    T *r = _t_newr(t,REPLACEMENT_VALUE);
+    _t_new_sym(t,USAGE,msym);
+    T *r = _t_new_node(t,REPLACEMENT_VALUE);
 
     int *path = (int *)_t_surface(_t_child(mr,SemtrexMatchPathIdx));
     // will just use the first sibling... *sibs = *(int*)_t_surface(_t_child(m,SemtrexMatchSibsIdx));

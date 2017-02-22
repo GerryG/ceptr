@@ -52,7 +52,7 @@ void testCreateTreeNodes() {
     spec_is_equal(_t_children(t),4);
     spec_is_ptr_equal(_t_child(t,4),t4);
 
-    t5 = _t_newr(t4,TEST_ANYTHING_SYMBOL2);
+    t5 = _t_new_node(t4,TEST_ANYTHING_SYMBOL2);
     spec_is_ptr_equal(_t_parent(t5),t4);
     spec_is_long_equal(_t_size(t5),(long)0);
     spec_is_symbol_equal(0,_t_symbol(t5),TEST_ANYTHING_SYMBOL2);
@@ -111,7 +111,7 @@ void testTreeStream() {
     stream = fmemopen(buffer, strlen (buffer), "r+");
 
     Stream *s = _st_new_unix_stream(stream,0);
-    T *ts = _t_new_cptr(0,EDGE_STREAM,s);
+    T *ts = _t_new_ceptr(0,EDGE_STREAM,s);
 
     spec_is_true(ts->context.flags & TFLAG_SURFACE_IS_CPTR);
     spec_is_true(ts->context.flags & TFLAG_REFERENCE);
@@ -390,7 +390,7 @@ void testTreeReplace() {
     T *t = _makeTestHTTPRequestTree(); // GET /groups/5/users.json?sort_by=last_name?page=2 HTTP/1.0
 
     // replace the version with a new version
-    T *t_version = _t_newr(0,HTTP_REQUEST_VERSION);
+    T *t_version = _t_new_node(0,HTTP_REQUEST_VERSION);
     _t_newi(t_version,VERSION_MAJOR,1);
     _t_newi(t_version,VERSION_MINOR,1);
 
@@ -427,7 +427,7 @@ void testTreeSwap() {
     T *t = _makeTestHTTPRequestTree(); // GET /groups/5/users.json?sort_by=last_name?page=2 HTTP/1.0
 
     // replace the version with a new version
-    T *t_version = _t_newr(0,HTTP_REQUEST_VERSION);
+    T *t_version = _t_new_node(0,HTTP_REQUEST_VERSION);
     _t_newi(t_version,VERSION_MAJOR,1);
     _t_newi(t_version,VERSION_MINOR,2);
 
@@ -714,19 +714,19 @@ void testTreeStreamWrite() {
     FILE *stream;
     stream = fmemopen(buffer, 500, "r+");
     Stream *st = _st_new_unix_stream(stream,1);
-    T *t = _t_new_str(0,TEST_STR_SYMBOL,"fish\n");
+    T *t = _t_new_string(0,TEST_STR_SYMBOL,"fish\n");
     spec_is_equal(_t_write(G_sem,t,st),5);
     spec_is_str_equal(buffer,"fish\n");
     _t_free(t);
 
-    t = _t_new_str(0,LINE,"cow");
+    t = _t_new_string(0,LINE,"cow");
     spec_is_equal(_t_write(G_sem,t,st),4);
     spec_is_str_equal(buffer,"fish\ncow\n");
     _t_free(t);
 
     t = _t_new_root(LINES);
-    _t_new_str(t,LINE,"thing1");
-    _t_new_str(t,LINE,"thing2");
+    _t_new_string(t,LINE,"thing1");
+    _t_new_string(t,LINE,"thing2");
     _t_write(G_sem,t,st);
     _t_free(t);
 
@@ -752,7 +752,7 @@ void testTreeFindBySymbol() {
     // find routine.  So for example expectations have optional semantic maps and
     // conversation so this can be used to find one if it exists.
 
-    T *match = _t_newr(0,PATTERN);
+    T *match = _t_new_node(0,PATTERN);
     _sl(match,TEST_INT_SYMBOL);
     UUIDt cuuid = __uuid_gen();
     T *cid = __cid_new(0,&cuuid,0);

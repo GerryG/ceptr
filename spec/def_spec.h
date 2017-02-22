@@ -148,9 +148,9 @@ void testDefProcessTemplate() {
     //! [testDefProcessTemplate]
     T *defs = __sem_get_defs(G_sem,SEM_TYPE_PROCESS,TEST_CONTEXT);
     T *code = _t_new_root(NOOP); // some code with a template
-    T *t = _t_newr(code,SLOT);
+    T *t = _t_new_node(code,SLOT);
     _t_news(t,GOAL,RESPONSE_HANDLER);
-    t = _t_newr(code,SLOT);
+    t = _t_new_node(code,SLOT);
     _t_news(t,USAGE,REQUEST_TYPE);
     _t_news(t,SLOT_IS_VALUE_OF,TEST_INT_SYMBOL);
     T *signature = __p_make_signature("result",SIGNATURE_SYMBOL,NULL_SYMBOL,NULL);

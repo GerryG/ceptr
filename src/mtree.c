@@ -221,7 +221,7 @@ void _m_2tfn(H h,N *n,void *data,MwalkState *s,Maddr ap) {
 
     if (n->flags & TFLAG_SURFACE_IS_TREE && !(n->flags & TFLAG_SURFACE_IS_RECEPTOR)) {
         if (is_run_node) raise_error("not implemented");
-        nt = _t_newt(t,n->symbol,_t_new_from_m(*(H *)n->surface));
+        nt = _t_new_tree(t,n->symbol,_t_new_from_m(*(H *)n->surface));
     }
     else if (n->flags & TFLAG_ALLOCATED) {
         nt = __t_new(t,n->symbol,n->surface,n->size,is_run_node);

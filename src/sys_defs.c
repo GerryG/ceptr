@@ -71,7 +71,7 @@ char * G_label;
 
 T *sT_(SemTable *sem,Symbol sym,int num_params,...){
     va_list params;
-    T *set = _t_newr(0,sym);
+    T *set = _t_new_node(0,sym);
     va_start(params,num_params);
     int i;
     for(i=0;i<num_params;i++) {
@@ -187,7 +187,7 @@ void load_context(char *path, Receptor *parent) {
             }
             else {
                 debug(D_BOOT,"creating context: %s\n",name);
-                T *def = _t_parse(sem,0,"(RECEPTOR_DEFINITION (RECEPTOR_LABEL %) (DEFINITIONS (STRUCTURES) (SYMBOLS) (PROCESSES) (RECEPTORS) (PROTOCOLS) (SCAPES)))",_t_new_str(0,ENGLISH_LABEL,name));
+                T *def = _t_parse(sem,0,"(RECEPTOR_DEFINITION (RECEPTOR_LABEL %) (DEFINITIONS (STRUCTURES) (SYMBOLS) (PROCESSES) (RECEPTORS) (PROTOCOLS) (SCAPES)))",_t_new_string(0,ENGLISH_LABEL,name));
                 rsid = __d_define_receptor(sem,def,parent->context);
             }
             r = _r_new(sem,rsid);

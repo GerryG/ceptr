@@ -39,32 +39,32 @@ Receptor * __r_init(T *t,SemTable *sem) {
 }
 
 T *__r_add_aspect(T *flux,Aspect aspect) {
-    T *a = _t_newr(flux,aspect);
-    _t_newr(a,EXPECTATIONS);
-    _t_newr(a,SIGNALS);
+    T *a = _t_new_node(flux,aspect);
+    _t_new_node(a,EXPECTATIONS);
+    _t_new_node(a,SIGNALS);
     return a;
 }
 
 T *_r_make_state() {
     T *t = _t_new_root(RECEPTOR_STATE);
-    T *f = _t_newr(t,FLUX);
+    T *f = _t_new_node(t,FLUX);
     __r_add_aspect(f,DEFAULT_ASPECT);
-    _t_newr(t,PENDING_SIGNALS);
-    _t_newr(t,PENDING_RESPONSES);
-    _t_newr(t,CONVERSATIONS);
-    _t_newi(t,RECEPTOR_ELAPSED_TIME,0);
+    _t_new_node(t,PENDING_SIGNALS);
+    _t_new_node(t,PENDING_RESPONSES);
+    _t_new_node(t,CONVERSATIONS);
+    _t_new_int(t,RECEPTOR_ELAPSED_TIME,0);
     return t;
 }
 
 //helper to make empty definitions tree
 T *__r_make_definitions() {
     T *defs = _t_new_root(DEFINITIONS);
-    _t_newr(defs,STRUCTURES);
-    _t_newr(defs,SYMBOLS);
-    _t_newr(defs,PROCESSES);
-    _t_newr(defs,RECEPTORS);
-    _t_newr(defs,PROTOCOLS);
-    _t_newr(defs,SCAPES);
+    _t_new_node(defs,STRUCTURES);
+    _t_new_node(defs,SYMBOLS);
+    _t_new_node(defs,PROCESSES);
+    _t_new_node(defs,RECEPTORS);
+    _t_new_node(defs,PROTOCOLS);
+    _t_new_node(defs,SCAPES);
     return defs;
 }
 
@@ -79,20 +79,20 @@ T *__r_make_definitions() {
  * <b>Examples (from test suite):</b>
  * @snippet spec/receptor_spec.h testReceptorCreate
  */
-Receptor *_r_new(SemTable *sem,SemanticID r) {
-    T *t = _t_new_root(RECEPTOR_INSTANCE);
-    _t_news(t,INSTANCE_OF,r);
-    if (semeq(r,SYS_RECEPTOR)) {
-        _t_newi(t,CONTEXT_NUM,0);
-        _t_newi(t,PARENT_CONTEXT_NUM,-1);
+Receptor *_r_new(SemTable *table, SemanticID ceptr_sym) {
+    TreeNode *root = _t_new_root(RECEPTOR_INSTANCE);
+    _t_new_sym(root, INSTANCE_OF, ceptr_sym);
+    if (semeq(ceptr_sym, SYS_RECEPTOR)) {
+        _t_new_int(root, CONTEXT_NUM, 0);
+        _t_new_int(root, PARENT_CONTEXT_NUM, -1);
     }
     else {
-        _t_newi(t,CONTEXT_NUM,_d_get_receptor_context(sem,r));
-        _t_newi(t,PARENT_CONTEXT_NUM,r.context);
+        _t_new_int(root, CONTEXT_NUM, _d_get_receptor_context(table, ceptr_sym));
+        _t_new_int(root, PARENT_CONTEXT_NUM, ceptr_sym.context);
     }
-    T *state = _r_make_state();
-    _t_add(t,state);
-    return __r_init(t,sem);
+    TreeNode *state = _r_make_state();
+    _t_add(root, state);
+    return __r_init(root, table);
 }
 
 /**
@@ -119,14 +119,14 @@ Receptor *_r_new_receptor_from_package(SemTable *sem,Symbol s,T *p,T *bindings) 
 
 T *__r_build_default_until() {
     T *until = _t_new_root(END_CONDITIONS);
-    _t_newr(until,UNLIMITED);
+    _t_new_node(until,UNLIMITED);
     return until;
 }
 
 // helper to build and expectation tree
 T *__r_build_expectation(Symbol carrier,T *pattern,T *action,T *with,T *until,T *using,T *cid) {
-    T *e = _t_newr(0,EXPECTATION);
-    _t_news(e,CARRIER,carrier);
+    T *e = _t_new_node(0,EXPECTATION);
+    _t_new_sym(e,CARRIER,carrier);
     _t_add(e,pattern);
     _t_add(e,action);
     if (!with) with = _t_new_root(PARAMS);
@@ -376,8 +376,8 @@ Xaddr _r_load_receptor_package(Receptor *ceptr, TreeNode *ceptr_package) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/receptor_spec.h testReceptorInstances
  */
-T * _r_get_instance(Receptor *r,Xaddr x) {
-    return _a_get_instance(&r->instances,x);
+TreeNode * _r_get_instance(Receptor *ceptr, Xaddr xaddr) {
+    return _a_get_instance(&ceptr->instances, xaddr);
 }
 
 /**
@@ -487,8 +487,8 @@ Receptor * _r_unserialize(SemTable *sem,void *surface) {
 // addressing that will include both ceptrnet addresses and receptor paths
 // as a possible options for addressing the receptor.
 T *___r_make_addr(T *parent,Symbol type,ReceptorAddress addr,bool is_run_node) {
-    T *a = __t_newr(parent,type,is_run_node);
-    __t_newi(a,RECEPTOR_ADDR,addr.addr,is_run_node);
+    T *a = __t_new_node(parent,type,is_run_node);
+    __t_new_int(a,RECEPTOR_ADDR,addr.addr,is_run_node);
     return a;
 }
 
@@ -514,17 +514,17 @@ ReceptorAddress __r_get_addr(T *addr) {
  */
 T* __r_make_signal(ReceptorAddress from,ReceptorAddress to,Aspect aspect,Symbol carrier,T *signal_contents,UUIDt *in_response_to,T* until,T *cid) {
     T *s = _t_new_root(SIGNAL);
-    T *e = _t_newr(s,ENVELOPE);
-    T *m = _t_newr(s,MESSAGE);
-    T *h = _t_newr(m,HEAD);
+    T *e = _t_new_node(s,ENVELOPE);
+    T *m = _t_new_node(s,MESSAGE);
+    T *h = _t_new_node(m,HEAD);
     // @todo convert to paths at some point?
     __r_make_addr(h,FROM_ADDRESS,from);
     __r_make_addr(h,TO_ADDRESS,to);
-    _t_news(h,ASPECT_IDENT,aspect);
-    _t_news(h,CARRIER,carrier);
+    _t_new_sym(h,ASPECT_IDENT,aspect);
+    _t_new_sym(h,CARRIER,carrier);
     UUIDt t = __uuid_gen();
     _t_new(e,SIGNAL_UUID,&t,sizeof(UUIDt));
-    T *b = _t_newt(m,BODY,signal_contents);
+    T *b = _t_new_tree(m,BODY,signal_contents);
 
     if (in_response_to && until) raise_error("attempt to make signal with both response_uuid and until");
     if (in_response_to)
@@ -576,9 +576,9 @@ T* _r_request(Receptor *r,T *signal,Symbol response_carrier,T *code_point,int pr
 
     //@todo lock resources
     T *result = __r_send(r,signal); // result is signal UUID
-    T *pr = _t_newr(r->pending_responses,PENDING_RESPONSE);
+    T *pr = _t_new_node(r->pending_responses,PENDING_RESPONSE);
     _t_add(pr,_t_clone(result));
-    _t_news(pr,CARRIER,response_carrier);
+    _t_new_sym(pr,CARRIER,response_carrier);
     _t_add(pr,__p_build_wakeup_info(code_point,process_id));
     int p[] = {SignalMessageIdx,MessageHeadIdx,HeadOptionalsIdx,TREE_PATH_TERMINATOR};
     T *ec = _t_get(signal,p);
@@ -685,7 +685,7 @@ void __r_test_expectation(Receptor *r,T *expectation,T *signal) {
     T *pattern,*m;
     pattern = _t_child(expectation,ExpectationPatternIdx);
     // if we get a match, create a run tree from the action, using the match and signal as the parameters
-    T *stx = _t_news(0,SEMTREX_GROUP,NULL_SYMBOL);
+    T *stx = _t_new_sym(0,SEMTREX_GROUP,NULL_SYMBOL);
     _t_add(stx,_t_clone(_t_child(pattern,1)));
     debug(D_SIGNALS,"matching %s\n",_td(q->ceptr,signal_contents));
     debug(D_SIGNALS,"against %s\n",_td(q->ceptr,stx));
@@ -806,7 +806,7 @@ bool __cid_equal(SemTable *sem,T *cid1,T*cid2) {
 }
 
 T *__cid_new(T *parent,UUIDt *c,T *topic) {
-    T *cid = _t_newr(parent,CONVERSATION_IDENT);
+    T *cid = _t_new_node(parent,CONVERSATION_IDENT);
     _t_new(cid,CONVERSATION_UUID,c,sizeof(UUIDt));
     return cid;
 }
@@ -823,7 +823,7 @@ T * _r_add_conversation(Receptor *r,UUIDt *parent_u,UUIDt *u,T *until,T *wakeup)
     T *cu = __cid_new(c,u,0);
 
     _t_add(c, until ? until : __r_build_default_until());
-    _t_newr(c,CONVERSATIONS); // add the root for any sub-conversations
+    _t_new_node(c,CONVERSATIONS); // add the root for any sub-conversations
     if (wakeup) _t_add(c,wakeup);
 
     //@todo NOT THREAD SAFE, add locking
@@ -1042,6 +1042,13 @@ Receptor * __r_get_receptor(T *installed_receptor) {
     return (Receptor *)_t_surface(installed_receptor);
 }
 
+/*
+ * Looks up an installed instance and gets its receptor
+ */
+Receptor *_r_get_receptor_instance(Receptor *ceptr,Xaddr xaddr) {
+    return __r_get_receptor( _r_get_instance(ceptr, xaddr) );
+}
+
 /*****************  Tree debugging utilities */
 
 char *_r_get_symbol_name(Receptor *r,Symbol s) {
@@ -1082,7 +1089,7 @@ void __r_listenerCallback(Stream *st,void *arg) {
 
     T *code = _t_rclone(_t_child(r->edge,2));
     T *params = _t_clone(_t_child(r->edge,3));
-    _t_new_cptr(params,EDGE_STREAM,st);
+    _t_new_ceptr(params,EDGE_STREAM,st);
     T *err_handler = _t_child(r->edge,4);
 
     T *run_tree = _t_new_root(RUN_TREE);
@@ -1100,9 +1107,9 @@ SocketListener *_r_addListener(Receptor *r,int port,T *code,T*params,T *err_hand
     T *e = _t_new_root(PARAMS);
 
     SocketListener *l = _st_new_socket_listener(port,__r_listenerCallback,r,delim);
-    _t_new_cptr(e,EDGE_LISTENER,l);
+    _t_new_ceptr(e,EDGE_LISTENER,l);
     _t_add(e,code);
-    if (!params) params = _t_newr(e,PARAMS);
+    if (!params) params = _t_new_node(e,PARAMS);
     else _t_add(e,params);
     if (err_handler) _t_add(e,err_handler);
 
@@ -1119,26 +1126,26 @@ void _r_addReader(Receptor *r,Stream *st,ReceptorAddress to,Aspect aspect,Symbol
     T *p,*code = NULL;
     if (conversation) {
         code = _t_new_root(CONVERSE);
-        p = _t_newr(code,SCOPE);
-        p = _t_newr(p,ITERATE);
+        p = _t_new_node(code,SCOPE);
+        p = _t_new_node(p,ITERATE);
     }
     else {
         code = p = _t_new_root(ITERATE);
     }
 
-    T *params = _t_newr(p,PARAMS);
-    T *eof = _t_newr(p,STREAM_ALIVE);
+    T *params = _t_new_node(p,PARAMS);
+    T *eof = _t_new_node(p,STREAM_ALIVE);
 
-    _t_new_cptr(eof,EDGE_STREAM,st);
-    //    _t_newi(p,TEST_INT_SYMBOL,2);  // two repetitions
-    T *say = _t_newr(p,SAY);
+    _t_new_ceptr(eof,EDGE_STREAM,st);
+    //    _t_new_int(p,TEST_INT_SYMBOL,2);  // two repetitions
+    T *say = _t_new_node(p,SAY);
 
     __r_make_addr(say,TO_ADDRESS,to);
-    _t_news(say,ASPECT_IDENT,aspect);
-    _t_news(say,CARRIER,carrier);
+    _t_new_sym(say,ASPECT_IDENT,aspect);
+    _t_new_sym(say,CARRIER,carrier);
 
     T *s = _t_new(say,STREAM_READ,0,0);
-    _t_new_cptr(s,EDGE_STREAM,st);
+    _t_new_ceptr(s,EDGE_STREAM,st);
     _t_new(s,RESULT_SYMBOL,&result_symbol,sizeof(Symbol));
 
     T *run_tree = __p_build_run_tree(code,0);
@@ -1158,18 +1165,18 @@ void _r_addWriter(Receptor *r,Stream *st,Aspect aspect) {
     /* T *t = parseSemtrex(&r->defs,stx); */
     /*  _t_add(expect,t); */
 
-    //    T *t =_t_news(expect,SEMTREX_GROUP,NULL_SYMBOL);
-    T *t =_t_newr(expect,SEMTREX_SYMBOL_ANY);
-    //    _t_news(x,SEMTREX_SYMBOL,LINE);
+    //    T *t =_t_new_sym(expect,SEMTREX_GROUP,NULL_SYMBOL);
+    T *t =_t_new_node(expect,SEMTREX_SYMBOL_ANY);
+    //    _t_new_sym(x,SEMTREX_SYMBOL,LINE);
 
     /* char buf[1000]; */
     /* _dump_semtrex(r->sem,t,buf); */
     /* puts(buf); */
 
     T* params = _t_new_root(PARAMS);
-    _t_new_cptr(params,EDGE_STREAM,st);
-    T* s = _t_newr(params,SLOT);
-    _t_news(s,USAGE,NULL_SYMBOL);
+    _t_new_ceptr(params,EDGE_STREAM,st);
+    T* s = _t_new_node(params,SLOT);
+    _t_new_sym(s,USAGE,NULL_SYMBOL);
 
     Symbol echo2stream;
     _sem_get_by_label(G_sem,"echo2stream",&echo2stream);
@@ -1187,7 +1194,7 @@ void _r_defineClockReceptor(SemTable *sem) {
     _t_new(resp,SIGNAL_REF,p,sizeof(int)*4);
 
     Xaddr x = {TICK,1};
-    T *g = _t_newr(resp,GET);
+    T *g = _t_new_node(resp,GET);
     _t_new(g,WHICH_XADDR,&x,sizeof(Xaddr));
     T *signature = __p_make_signature("result",SIGNATURE_SYMBOL,NULL_SYMBOL,NULL);
     Process proc = _d_define_process(sem,resp,"respond with current time","long desc...",signature,NULL,clk_ctx);
@@ -1275,14 +1282,14 @@ T * __r_make_timestamp(Symbol s,int delta) {
     clock += delta;
     gmtime_r(&clock, &t);
     T *tick = _t_new_root(s);
-    T *today = _t_newr(tick,TODAY);
-    T *now = _t_newr(tick,NOW);
-    _t_newi(today,YEAR,t.tm_year+1900);
-    _t_newi(today,MONTH,t.tm_mon+1);
-    _t_newi(today,DAY,t.tm_mday);
-    _t_newi(now,HOUR,t.tm_hour);
-    _t_newi(now,MINUTE,t.tm_min);
-    _t_newi(now,SECOND,t.tm_sec);
+    T *today = _t_new_node(tick,TODAY);
+    T *now = _t_new_node(tick,NOW);
+    _t_new_int(today,YEAR,t.tm_year+1900);
+    _t_new_int(today,MONTH,t.tm_mon+1);
+    _t_new_int(today,DAY,t.tm_mday);
+    _t_new_int(now,HOUR,t.tm_hour);
+    _t_new_int(now,MINUTE,t.tm_min);
+    _t_new_int(now,SECOND,t.tm_sec);
     return tick;
 }
 

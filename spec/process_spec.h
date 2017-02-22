@@ -58,7 +58,7 @@ void testProcessGet() {
     T *t = _t_newi(0,TEST_INT_SYMBOL,314);
     Xaddr x = _r_new_instance(r,t);
 
-    T *n = _t_newr(0,GET);
+    T *n = _t_new_node(0,GET);
     _t_new(n,WHICH_XADDR,&x,sizeof(Xaddr));
     T *run_tree = __p_build_run_tree(n,0);
     _t_free(n);
@@ -81,7 +81,7 @@ void testProcessDel() {
     T *t = _t_newi(0,TEST_INT_SYMBOL,314);
     Xaddr x = _r_new_instance(r,t);
 
-    T *n = _t_newr(0,DEL);
+    T *n = _t_new_node(0,DEL);
     _t_new(n,WHICH_XADDR,&x,sizeof(Xaddr));
     T *run_tree = __p_build_run_tree(n,0);
     _t_free(n);
@@ -101,9 +101,9 @@ void testProcessNew() {
     Receptor *r = _r_new(G_sem,TEST_RECEPTOR);
     Q *q = r->q;
 
-    T *n = _t_newr(0,NEW);
+    T *n = _t_new_node(0,NEW);
     _t_news(n,NEW_TYPE,TEST_INT_SYMBOL);
-    _t_new_str(n,TEST_STR_SYMBOL,"fish");
+    _t_new_string(n,TEST_STR_SYMBOL,"fish");
     T *run_tree = __p_build_run_tree(n,0);
     _t_free(n);
     Qe *e = _p_addrt2q(q,run_tree);
@@ -111,7 +111,7 @@ void testProcessNew() {
 
     spec_is_equal(r->q->completed->context->err,structureMismatchReductionErr);
 
-    n = _t_newr(0,NEW);
+    n = _t_new_node(0,NEW);
     _t_news(n,NEW_TYPE,TEST_INT_SYMBOL);
     _t_newi(n,TEST_INT_SYMBOL2,314);
     run_tree = __p_build_run_tree(n,0);
@@ -320,7 +320,7 @@ void testProcessSemtrex() {
     _t_free(n);
 
     n = _t_new_root(MATCH);
-    pattern = _t_newr(n,SEMTREX_WALK);
+    pattern = _t_new_node(n,SEMTREX_WALK);
     T *g = _t_news(pattern,SEMTREX_GROUP,TEST_CHAR_SYMBOL);
     __stxcv(g,'s');
     t = makeASCIITree("fish");
@@ -347,8 +347,8 @@ void testProcessFillMatch() {
     T *t = _t_new_root(RUN_TREE);
     // test FILL_FROM_MATCH which takes three params, the template tree, the stx-match and the tree it matched on
     T *n = _t_new_root(FILL_FROM_MATCH);
-    T *p1 = _t_newr(n,TEST_ANYTHING_SYMBOL);
-    T *s = _t_newr(p1,SLOT);
+    T *p1 = _t_new_node(n,TEST_ANYTHING_SYMBOL);
+    T *s = _t_new_node(p1,SLOT);
     _t_news(s,USAGE,TEST_INT_SYMBOL2);
     T *p2 = _t_newi(n,SEMTREX_MATCH,1);
     _t_news(p2,SEMTREX_MATCH,TEST_INT_SYMBOL2);
@@ -374,8 +374,8 @@ void testProcessFillMatchFull() {
     T *t = _t_new_root(RUN_TREE);
     // test FILL_FROM_MATCH which takes three params, the template tree, the stx-match and the tree it matched on
     T *n = _t_new_root(FILL_FROM_MATCH);
-    T *p1 = _t_newr(n,TEST_ANYTHING_SYMBOL);
-    T *s = _t_newr(p1,SLOT);
+    T *p1 = _t_new_node(n,TEST_ANYTHING_SYMBOL);
+    T *s = _t_new_node(p1,SLOT);
     _t_news(s,USAGE,NULL_SYMBOL);
     T *p2 = _t_newi(n,SEMTREX_MATCH,1);
     _t_news(p2,SEMTREX_MATCH,NULL_SYMBOL);
@@ -462,7 +462,7 @@ void testProcessIntMath() {
     /* n = _t_new_root(ADD_INT); */
     /* spec_is_sem_equal(_sem_get_symbol_structure(G_sem,s),INTEGER); */
     /* _t_newi(n,TEST_INT_SYMBOL,99); */
-    /* T *s = _t_newr(n,SLOT); */
+    /* T *s = _t_new_node(n,SLOT); */
     /* _t_news(s,USAGE,TEST_INT_SYMBOL); */
     /* spec_is_equal(__p_reduce_sys_proc(0,ADD_INT,n,0),incompatibleTypeReductionErr); */
     /* spec_is_str_equal(t2s(n),"(TEST_INT_SYMBOL:199)"); */
@@ -588,9 +588,9 @@ void testProcessString() {
     // test string concatenation
     T *n = _t_new_root(CONCAT_STR);
     _t_news(n,RESULT_SYMBOL,TEST_NAME_SYMBOL);
-    _t_new_str(n,TEST_STR_SYMBOL,"Fred");
-    _t_new_str(n,TEST_STR_SYMBOL," ");
-    _t_new_str(n,TEST_STR_SYMBOL,"Smith");
+    _t_new_string(n,TEST_STR_SYMBOL,"Fred");
+    _t_new_string(n,TEST_STR_SYMBOL," ");
+    _t_new_string(n,TEST_STR_SYMBOL,"Smith");
     spec_is_equal(__p_reduce_sys_proc(c,CONCAT_STR,n,r->q),noReductionErr);
 
     spec_is_str_equal(t2s(n),"(TEST_NAME_SYMBOL:Fred Smith)");
@@ -598,7 +598,7 @@ void testProcessString() {
 
     // test string to char tree conversion
     n = _t_new_root(EXPAND_STR);
-    _t_new_str(n,TEST_STR_SYMBOL,"fish");
+    _t_new_string(n,TEST_STR_SYMBOL,"fish");
     spec_is_equal(__p_reduce_sys_proc(0,EXPAND_STR,n,0),noReductionErr);
     spec_is_str_equal(t2s(n),"(ASCII_CHARS (ASCII_CHAR:'f') (ASCII_CHAR:'i') (ASCII_CHAR:'s') (ASCII_CHAR:'h'))");
     _t_free(n);
@@ -608,10 +608,10 @@ void testProcessString() {
     _t_news(n,RESULT_SYMBOL,TEST_NAME_SYMBOL);
     char xx = 'F';
     _t_new(n,ASCII_CHAR,&xx,sizeof(char));
-    _t_new_str(n,TEST_STR_SYMBOL,"red");
+    _t_new_string(n,TEST_STR_SYMBOL,"red");
     xx = ' ';
     _t_new(n,ASCII_CHAR,&xx,sizeof(char));
-    _t_new_str(n,TEST_STR_SYMBOL,"Smith");
+    _t_new_string(n,TEST_STR_SYMBOL,"Smith");
     spec_is_equal(__p_reduce_sys_proc(c,CONTRACT_STR,n,r->q),noReductionErr);
     spec_is_str_equal(t2s(n),"(TEST_NAME_SYMBOL:Fred Smith)");
     _t_free(n);
@@ -644,7 +644,7 @@ void testProcessRespond() {
     T *s = __r_make_signal(f,t,DEFAULT_ASPECT,TESTING,signal_contents,0,defaultRequestUntil(),0);
 
     T *run_tree = _t_new_root(RUN_TREE);
-    T *n = _t_newr(run_tree,RESPOND);
+    T *n = _t_new_node(run_tree,RESPOND);
     _t_news(n,CARRIER,TESTING);
 
     T *response_contents = _t_newi(n,TEST_INT_SYMBOL,271);
@@ -676,7 +676,7 @@ void testProcessRespond() {
 extern int G_next_process_id;
 
 void testProcessSay() {
-    T *p = _t_newr(0,SAY);
+    T *p = _t_new_node(0,SAY);
     ReceptorAddress to = {99}; // DUMMY ADDR
 
     __r_make_addr(p,TO_ADDRESS,to);
@@ -709,7 +709,7 @@ void testProcessSay() {
 }
 
 void testProcessRequest() {
-    T *p = _t_newr(0,REQUEST);
+    T *p = _t_new_node(0,REQUEST);
     ReceptorAddress to = {99}; // DUMMY ADDR
 
     __r_make_addr(p,TO_ADDRESS,to);
@@ -717,7 +717,7 @@ void testProcessRequest() {
     _t_news(p,CARRIER,TESTING);
     _t_newi(p,TEST_INT_SYMBOL,314);
     _t_news(p,RESPONSE_CARRIER,TESTING);
-    T *ec = _t_newr(p,END_CONDITIONS);
+    T *ec = _t_new_node(p,END_CONDITIONS);
     _t_newi(ec,COUNT,1);
 
     T *code =_t_rclone(p);
@@ -750,7 +750,7 @@ void testProcessRequest() {
     // debug_enable(D_SIGNALS);
     // generate a response signal
 
-    T *s = __r_make_signal(r->addr,r->addr,DEFAULT_ASPECT,TESTING,_t_new_str(0,TEST_STR_SYMBOL,"one fish"),_t_surface(_t_child(run_tree,1)),0,0);
+    T *s = __r_make_signal(r->addr,r->addr,DEFAULT_ASPECT,TESTING,_t_new_string(0,TEST_STR_SYMBOL,"one fish"),_t_surface(_t_child(run_tree,1)),0,0);
     _r_deliver(r,s);
     spec_is_str_equal(_td(r,r->pending_responses),"(PENDING_RESPONSES)");
 
@@ -787,7 +787,7 @@ void testProcessRequest() {
 
 
 T *_testProcessAddSay(T *parent,int id,T *message) {
-    T *say =  _t_newr(parent,SAY);
+    T *say =  _t_new_node(parent,SAY);
     ReceptorAddress to = {id}; // DUMMY ADDR
     __r_make_addr(say,TO_ADDRESS,to);
     _t_news(say,ASPECT_IDENT,DEFAULT_ASPECT);
@@ -812,8 +812,8 @@ T *_testProcessAddSay(T *parent,int id,T *message) {
 */
 
 void testProcessConverse() {
-    T *p = _t_newr(0,CONVERSE);
-    T *scope = _t_newr(p,SCOPE);
+    T *p = _t_new_node(0,CONVERSE);
+    T *scope = _t_new_node(p,SCOPE);
     _t_newi(p,BOOLEAN,1);
     _testProcessAddSay(scope,100,_t_newi(0,TEST_INT_SYMBOL,31415));
     T *code = _testProcessAddSay(0,99,p);
@@ -848,7 +848,7 @@ void testProcessConverse() {
     spec_is_str_equal(t2s(ps),"(PENDING_SIGNALS (SIGNAL (ENVELOPE (SIGNAL_UUID)) (MESSAGE (HEAD (FROM_ADDRESS (RECEPTOR_ADDR:3)) (TO_ADDRESS (RECEPTOR_ADDR:100)) (ASPECT_IDENT:DEFAULT_ASPECT) (CARRIER:TESTING) (CONVERSATION_IDENT (CONVERSATION_UUID))) (BODY:{(TEST_INT_SYMBOL:31415)}))))");
 
     // now use the COMPLETE instruction to clean-up
-    code = _t_newr(0,COMPLETE);
+    code = _t_new_node(0,COMPLETE);
     _t_newi(code,TEST_INT_SYMBOL,123);
     _t_add(code,_t_clone(_t_getv(cons,1,ConversationIdentIdx,TREE_PATH_TERMINATOR)));
 
@@ -872,9 +872,9 @@ void testProcessConverse() {
 
 
     // setup a case for testing the COMPLETE instruction within the CONVERSE SCOPE
-    p = _t_newr(0,CONVERSE);
-    scope = _t_newr(p,SCOPE);
-    T *complete = _t_newr(scope,COMPLETE);
+    p = _t_new_node(0,CONVERSE);
+    scope = _t_new_node(p,SCOPE);
+    T *complete = _t_new_node(scope,COMPLETE);
     _t_newi(complete,TEST_INT_SYMBOL,321);
     _t_newi(scope,TEST_INT_SYMBOL,123);
 
@@ -890,14 +890,14 @@ void testProcessConverse() {
 
 
     // setup a case for testing that a conversation scope gets "inherited" by sub-contexts
-    code = _testProcessAddSay(0,100,_t_new_str(0,TEST_STR_SYMBOL,"What I said!"));
+    code = _testProcessAddSay(0,100,_t_new_string(0,TEST_STR_SYMBOL,"What I said!"));
     T *signature = __p_make_signature("result",SIGNATURE_SYMBOL,NULL_SYMBOL,NULL);
     Process sayer = _d_define_process(G_sem,code,"sayer","sends a signal to 100",signature,0,r->context);
 
-    p = _t_newr(0,CONVERSE);
-    scope = _t_newr(p,SCOPE);
-    _t_newr(scope,sayer);
-    complete = _t_newr(scope,COMPLETE); // and make sure this scope gets cleaned up
+    p = _t_new_node(0,CONVERSE);
+    scope = _t_new_node(p,SCOPE);
+    _t_new_node(scope,sayer);
+    complete = _t_new_node(scope,COMPLETE); // and make sure this scope gets cleaned up
     _t_newi(complete,TEST_INT_SYMBOL,321);
 
     run_tree = __p_build_run_tree(p,0);
@@ -912,11 +912,11 @@ void testProcessConverse() {
     spec_is_str_equal(t2s(_t_child(ps,_t_children(ps))),"(SIGNAL (ENVELOPE (SIGNAL_UUID)) (MESSAGE (HEAD (FROM_ADDRESS (RECEPTOR_ADDR:3)) (TO_ADDRESS (RECEPTOR_ADDR:100)) (ASPECT_IDENT:DEFAULT_ASPECT) (CARRIER:TESTING) (CONVERSATION_IDENT (CONVERSATION_UUID))) (BODY:{(TEST_STR_SYMBOL:What I said!)})))");
 
     // test conversation nesting
-    p = _t_newr(0,CONVERSE);
-    scope = _t_newr(p,SCOPE);
-    T *p2 = _t_newr(scope,CONVERSE);
-    p2 = _t_newr(p2,SCOPE);
-    _t_newr(p2,sayer);
+    p = _t_new_node(0,CONVERSE);
+    scope = _t_new_node(p,SCOPE);
+    T *p2 = _t_new_node(scope,CONVERSE);
+    p2 = _t_new_node(p2,SCOPE);
+    _t_new_node(p2,sayer);
 
     run_tree = __p_build_run_tree(p,0);
     _t_free(p);
@@ -993,8 +993,8 @@ void testProcessConverseListen() {
 
 void testProcessThisScope() {
     T *code = _t_new_root(CONVERSE);
-    T *scope = _t_newr(code,SCOPE);
-    _t_newr(scope,THIS_SCOPE);
+    T *scope = _t_new_node(code,SCOPE);
+    _t_new_node(scope,THIS_SCOPE);
 
     Receptor *r = _r_new(G_sem,TEST_RECEPTOR);
 
@@ -1027,7 +1027,7 @@ void testProcessQuote() {
     // test process quoting
     T *n = _t_new_root(QUOTE);
 
-    T *a = _t_newr(n,ADD_INT);
+    T *a = _t_new_node(n,ADD_INT);
     _t_newi(a,TEST_INT_SYMBOL,99);
     _t_newi(a,TEST_INT_SYMBOL,100);
 
@@ -1053,14 +1053,14 @@ void testProcessStream() {
     // a boolean if the stream is readable or not.
     T *n = _t_new_root(STREAM_ALIVE);
     Stream *st = _st_new_unix_stream(stream,1);
-    _t_new_cptr(n,EDGE_STREAM,st);
+    _t_new_ceptr(n,EDGE_STREAM,st);
     __p_reduce_sys_proc(0,STREAM_ALIVE,n,0);
     spec_is_str_equal(t2s(n),"(BOOLEAN:1)");
     _t_free(n);
 
     // test reading a stream
     n = _t_new_root(STREAM_READ);
-    _t_new_cptr(n,EDGE_STREAM,st);
+    _t_new_ceptr(n,EDGE_STREAM,st);
     _t_news(n,RESULT_SYMBOL,TEST_STR_SYMBOL);
 
     T *run_tree = __p_build_run_tree(n,0);
@@ -1085,7 +1085,7 @@ void testProcessStream() {
 
     // now test reading again but this time into an ASCII_CHARS tree
     n = _t_new_root(STREAM_READ);
-    _t_new_cptr(n,EDGE_STREAM,st);
+    _t_new_ceptr(n,EDGE_STREAM,st);
     _t_news(n,RESULT_SYMBOL,ASCII_CHARS);
 
     run_tree = __p_build_run_tree(n,0);
@@ -1098,7 +1098,7 @@ void testProcessStream() {
 
     // now test reading again but this time into a symbol that requires transcoding
     n = _t_new_root(STREAM_READ);
-    _t_new_cptr(n,EDGE_STREAM,st);
+    _t_new_ceptr(n,EDGE_STREAM,st);
     _t_news(n,RESULT_SYMBOL,HTTP_REQUEST);
 
     run_tree = __p_build_run_tree(n,0);
@@ -1112,12 +1112,12 @@ void testProcessStream() {
     // test writing to the stream
     fseek(stream,strlen(buffer),SEEK_SET);
     n = _t_new_root(STREAM_WRITE);
-    _t_new_cptr(n,EDGE_STREAM,st);
-    _t_new_str(n,TEST_STR_SYMBOL,"fish\n");
-    _t_new_str(n,LINE,"cow");
-    T *lns = _t_newr(n,LINES);
-    _t_new_str(lns,LINE,"thing1");
-    _t_new_str(lns,LINE,"thing2");
+    _t_new_ceptr(n,EDGE_STREAM,st);
+    _t_new_string(n,TEST_STR_SYMBOL,"fish\n");
+    _t_new_string(n,LINE,"cow");
+    T *lns = _t_new_node(n,LINES);
+    _t_new_string(lns,LINE,"thing1");
+    _t_new_string(lns,LINE,"thing2");
     _t_newi(n,TEST_INT_SYMBOL,314);
 
     run_tree = __p_build_run_tree(n,0);
@@ -1138,8 +1138,8 @@ void testProcessStream() {
     st = _st_new_unix_stream(stream,0);
     n = _t_new_root(STREAM_WRITE);
 
-    _t_new_cptr(n,EDGE_STREAM,st);
-    _t_new_str(n,TEST_STR_SYMBOL,"fish\n");
+    _t_new_ceptr(n,EDGE_STREAM,st);
+    _t_new_string(n,TEST_STR_SYMBOL,"fish\n");
 
     run_tree = __p_build_run_tree(n,0);
     _t_free(n);
@@ -1156,7 +1156,7 @@ void testProcessStream() {
 
     _st_kill(st);
     n = _t_new_root(STREAM_ALIVE);
-    _t_new_cptr(n,EDGE_STREAM,st);
+    _t_new_ceptr(n,EDGE_STREAM,st);
     __p_reduce_sys_proc(0,STREAM_ALIVE,n,0);
     spec_is_str_equal(t2s(n),"(BOOLEAN:0)");
     _t_free(n);
@@ -1177,7 +1177,7 @@ void testProcessStreamClose() {
 
     T *n = _t_new_root(STREAM_CLOSE);
     Stream *st = _st_new_unix_stream(stream,true);
-    _t_new_cptr(n,EDGE_STREAM,st);
+    _t_new_ceptr(n,EDGE_STREAM,st);
     //debug_enable(D_STREAM+D_SOCKET+D_SIGNALS);
     __p_reduce_sys_proc(0,STREAM_CLOSE,n,0);
     //@todo figure out what STREAM_CLOSE should really return
@@ -1198,18 +1198,18 @@ void testProcessInitiate(){
     T *n = _t_new_root(INITIATE_PROTOCOL);
     T *p = _t_news(n,PNAME,time);
     T *i = _t_news(n,WHICH_INTERACTION,tell_time);
-    T *bindings = _t_newr(n,PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_RECEPTOR);
+    T *bindings = _t_new_node(n,PROTOCOL_BINDINGS);
+    T *res = _t_new_node(bindings,RESOLUTION);
+    T *w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,TIME_TELLER);
     __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,TIME_HEARER);
     ReceptorAddress clock_addr = {3}; // @todo bogus!!! fix getting clock address somehow
     __r_make_addr(w,ACTUAL_RECEPTOR,clock_addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_PROCESS);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_PROCESS);
     _t_news(w,GOAL,RESPONSE_HANDLER);
     T *noop = _t_new_root(NOOP);
     _t_newi(noop,TEST_INT_SYMBOL,314);
@@ -1238,8 +1238,8 @@ void testProcessReduce() {
 
     T *n = _t_new_root(IF); // multi-level IF to test descending a number of levels
     _t_newi(n,BOOLEAN,1);
-    T *n1 = _t_newr(n,IF);
-    T *n2 = _t_newr(n1,IF);
+    T *n1 = _t_new_node(n,IF);
+    T *n2 = _t_new_node(n1,IF);
     _t_newi(n2,BOOLEAN,0);
     _t_newi(n2,BOOLEAN,1);
     _t_newi(n2,BOOLEAN,0);
@@ -1308,7 +1308,7 @@ void testProcessParameter() {
     T *n = _t_parse(G_sem,0,"(TEST_ANYTHING_SYMBOL (DISSOLVE (PARAMETER (PARAMETER_REFERENCE (PARAM_PATH:/2/1)) (PARAMETER_RESULT (RESULT_VALUE)))) (PARAMETER (PARAMETER_REFERENCE (PARAM_PATH:/2/2)) (PARAMETER_RESULT (RESULT_SYMBOL:TEST_SYMBOL_SYMBOL))) (PARAMETER (PARAMETER_REFERENCE (PARAM_PATH:/2/1)) (PARAMETER_RESULT (RESULT_LABEL:ENGLISH_LABEL))))");
 
     T *p1 = _t_newi(0,TEST_INT_SYMBOL,314);
-    T *p2 = _t_new_str(0,TEST_STR_SYMBOL,"314");
+    T *p2 = _t_new_string(0,TEST_STR_SYMBOL,"314");
     T *run_tree = __p_build_run_tree(n,2,p1,p2);
     _t_free(p1);
     _t_free(p2);
@@ -1329,8 +1329,8 @@ void testProcessRefs() {
     int pt1[] = {2,1,TREE_PATH_TERMINATOR};
     int pt2[] = {SignalMessageIdx,MessageBodyIdx,0,TREE_PATH_TERMINATOR};
 
-    T *n = _t_newr(0,NOOP);
-    T *t = _t_newr(n,TEST_ANYTHING_SYMBOL);
+    T *n = _t_new_node(0,NOOP);
+    T *t = _t_new_node(n,TEST_ANYTHING_SYMBOL);
     _t_new(t,PARAM_REF,pt1,sizeof(int)*4);
     _t_new(t,SIGNAL_REF,pt2,sizeof(int)*4);
     t = _t_newi(0,TEST_INT_SYMBOL,314);  // a param to the run tree
@@ -1339,7 +1339,7 @@ void testProcessRefs() {
     _t_free(t);
     ReceptorAddress fm = {3}; // DUMMY ADDR
     ReceptorAddress to = {4}; // DUMMY ADDR
-    T *signal = __r_make_signal(fm,to,DEFAULT_ASPECT,TESTING,_t_new_str(0,TEST_STR_SYMBOL,"foo"),0,0,0);
+    T *signal = __r_make_signal(fm,to,DEFAULT_ASPECT,TESTING,_t_new_string(0,TEST_STR_SYMBOL,"foo"),0,0,0);
 
     // simulate that this run-tree is on the flux.
     _t_add(signal,run_tree);
@@ -1532,7 +1532,7 @@ void testProcessError() {
     T *n = _t_parse(G_sem,0,"(NOOP (DIV_INT (TEST_INT_SYMBOL:100) (TEST_INT_SYMBOL:0)))");
     T *c = _t_rclone(n);
     _t_add(t,c);
-    T *ps = _t_newr(t,PARAMS);
+    T *ps = _t_new_node(t,PARAMS);
 
     // error routine is just a param ref to pass back the reduction error
     int pt[] = {RunTreeErrorParamsIdx,1,TREE_PATH_TERMINATOR};
@@ -1557,7 +1557,7 @@ void testProcessRaise() {
     _t_news(n,REDUCTION_ERROR_SYMBOL,NOT_A_PROCESS_ERR); // pick a random error to raise
     T *c = _t_rclone(n);
     _t_add(t,c);
-    T *ps = _t_newr(t,PARAMS);
+    T *ps = _t_new_node(t,PARAMS);
 
     // error routine is just a param ref to pass back the reduction error
     int pt[] = {RunTreeErrorParamsIdx,1,TREE_PATH_TERMINATOR};
@@ -1579,7 +1579,7 @@ void testProcessIterate() {
 
     // an iterate process that writes to a stream and 3 times
     Stream *st = _st_new_unix_stream(output,0);
-    T *code = _t_parse(G_sem,0,"(ITERATE (PARAMS) (TEST_INT_SYMBOL:3) (STREAM_WRITE % (LINE:\"testing\")))",_t_new_cptr(0,EDGE_STREAM,st));
+    T *code = _t_parse(G_sem,0,"(ITERATE (PARAMS) (TEST_INT_SYMBOL:3) (STREAM_WRITE % (LINE:\"testing\")))",_t_new_ceptr(0,EDGE_STREAM,st));
 
     T *t = __p_build_run_tree(code,0);
     Error e = _p_reduce(G_sem,t);
@@ -1592,7 +1592,7 @@ void testProcessIterate() {
 
     // now test iteration with a condition instead of an INTEGER
     //  a condition that checks to see if the param is less than 3
-    code = _t_parse(G_sem,0,"(ITERATE (PARAMS (TEST_INT_SYMBOL:314)) (LT_INT (PARAM_REF:/1/1/1) (TEST_INT_SYMBOL:3)) (STREAM_WRITE % (LINE:\"testing\")))",_t_new_cptr(0,EDGE_STREAM,st));
+    code = _t_parse(G_sem,0,"(ITERATE (PARAMS (TEST_INT_SYMBOL:314)) (LT_INT (PARAM_REF:/1/1/1) (TEST_INT_SYMBOL:3)) (STREAM_WRITE % (LINE:\"testing\")))",_t_new_ceptr(0,EDGE_STREAM,st));
 
     t = __p_build_run_tree(code,0);
     e = _p_reduce(G_sem,t);
@@ -1614,16 +1614,16 @@ void testProcessIterateOnSymbol() {
 
     // an iterate process that writes to a stream and 3 times
     Stream *st = _st_new_unix_stream(output,0);
-    T *code = _t_parse(G_sem,0,"(ITERATE (PARAMS) (ITERATE_ON_SYMBOL:TEST_STR_SYMBOL) (STREAM_WRITE % (PARAM_REF:/1/1/1/1)))",_t_new_cptr(0,EDGE_STREAM,st));
+    T *code = _t_parse(G_sem,0,"(ITERATE (PARAMS) (ITERATE_ON_SYMBOL:TEST_STR_SYMBOL) (STREAM_WRITE % (PARAM_REF:/1/1/1/1)))",_t_new_ceptr(0,EDGE_STREAM,st));
     T *run_tree = __p_build_run_tree(code,0);
     _t_free(code);
 
     Receptor *r = _r_new(G_sem,TEST_RECEPTOR);
 
     Xaddr x;
-    T *t = _t_new_str(0,TEST_STR_SYMBOL,"thing1 ");
+    T *t = _t_new_string(0,TEST_STR_SYMBOL,"thing1 ");
     x = _r_new_instance(r,t);
-    t = _t_new_str(0,TEST_STR_SYMBOL,"thing2 ");
+    t = _t_new_string(0,TEST_STR_SYMBOL,"thing2 ");
     x = _r_new_instance(r,t);
 
     Q *q = r->q;
@@ -1671,7 +1671,7 @@ void testProcessListen() {
 
     spec_is_str_equal(t2s(__r_get_expectations(r,DEFAULT_ASPECT)),"(EXPECTATIONS (EXPECTATION (CARRIER:TESTING) (PATTERN (SEMTREX_SYMBOL_LITERAL (SEMTREX_SYMBOL:TEST_STR_SYMBOL))) (WAKEUP_REFERENCE (PROCESS_IDENT:1) (CODE_PATH:/1)) (PARAMS (SLOT (USAGE:NULL_SYMBOL))) (END_CONDITIONS (COUNT:1))))");
 
-    T *s = __r_make_signal(r->addr,r->addr,DEFAULT_ASPECT,TESTING,_t_new_str(0,TEST_STR_SYMBOL,"fishy!"),0,0,0);
+    T *s = __r_make_signal(r->addr,r->addr,DEFAULT_ASPECT,TESTING,_t_new_string(0,TEST_STR_SYMBOL,"fishy!"),0,0,0);
     _r_deliver(r,s);
     spec_is_equal(_p_reduceq(q),noReductionErr);
 
@@ -1713,12 +1713,12 @@ void testProcessErrorTrickleUp() {
     // create a run tree right in the position to "call" this function
     T *t = _t_new_root(RUN_TREE);
     T *n = _t_new_root(NOOP);
-    T *d = _t_newr(n,divz);
+    T *d = _t_new_node(n,divz);
     _t_newi(d,TEST_INT_SYMBOL,124);
 
     T *c = _t_rclone(n);
     _t_add(t,c);
-    T *ps = _t_newr(t,PARAMS);
+    T *ps = _t_new_node(t,PARAMS);
 
     // error routine is just a param ref to pass back the error tree
     int pt[] = {4,1,TREE_PATH_TERMINATOR};

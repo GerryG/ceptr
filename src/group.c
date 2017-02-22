@@ -132,52 +132,53 @@ _o_make_protocol_def(sem,"talk",
 );
 */
 
-
-Receptor *makeGroup(VMHost *v,char *label) {
-    SemTable *sem = v->ceptr->sem;
-    Symbol group = _d_define_receptor(sem,label,__r_make_definitions(),DEV_COMPOSITORY_CONTEXT);
-    Receptor *r = _r_new(sem,group);
-    Xaddr groupx = _v_new_receptor(v,v->ceptr,group,r);
-    _v_activate(v,groupx);
+// This looks like a sort of namespace for definitions
+Receptor *makeGroup(VMHost *vm, char *label) {
+    SemTable *table = vm->ceptr->sem;
+    Symbol group = _d_define_receptor(table, label, __r_make_definitions(),
+      DEV_COMPOSITORY_CONTEXT);
+    Receptor *ceptr = _r_new(table, group);
+    Xaddr groupx = _v_register_ceptr(vm, vm->ceptr, group, ceptr);
+    _v_activate(vm, groupx);
     //debug_enable(D_PROTOCOL);
-    _o_express_role(r,group1,GROUP,DEFAULT_ASPECT,NULL);
-    debug_disable(D_PROTOCOL);
-    /* Symbol channel_addr = _r_define_symbol(r,RECEPTOR_ADDRESS,"channel"); */
-    /* Symbol member =  _r_define_symbol(r,RECEPTOR_ADDRESS,"member"); */
-    /* Symbol group_addr = _r_define_symbol(r,RECEPTOR_ADDRESS,"group"); */
-    /* Symbol proxy_addr = _r_define_symbol(r,RECEPTOR_ADDRESS,"proxy"); */
-    /* //    Symbol create = _r_define_symbol(r,NULL_STRUCTURE,"create"); */
-    /* Symbol join = _r_define_symbol(r,NULL_STRUCTURE,"talking join"); */
-    /* Symbol read = _r_define_symbol(r,NULL_STRUCTURE,"talking read"); */
-    /* Symbol post_id = _r_define_symbol(r,INTEGER,"post_id"); */
+    _o_express_role(ceptr, group1, GROUP, DEFAULT_ASPECT, NULL);
+    //debug_disable(D_PROTOCOL);
+    /* Symbol channel_addr = _r_define_symbol(r, RECEPTOR_ADDRESS, "channel"); */
+    /* Symbol member =  _r_define_symbol(r, RECEPTOR_ADDRESS, "member"); */
+    /* Symbol group_addr = _r_define_symbol(r, RECEPTOR_ADDRESS, "group"); */
+    /* Symbol proxy_addr = _r_define_symbol(r, RECEPTOR_ADDRESS, "proxy"); */
+    /* //    Symbol create = _r_define_symbol(r, NULL_STRUCTURE, "create"); */
+    /* Symbol join = _r_define_symbol(r, NULL_STRUCTURE, "talking join"); */
+    /* Symbol read = _r_define_symbol(r, NULL_STRUCTURE, "talking read"); */
+    /* Symbol post_id = _r_define_symbol(r, INTEGER, "post_id"); */
 
-    /* T *e_join,*e_sub,*e_crud,*e_act; */
-    /* T *g_d = _o_make_protocol_def(sem,"talking", */
-    /*                 ROLE,channel_addr, */
-    /*                 ROLE,group_addr, */
-    /*                 ROLE,proxy_addr, */
-    /*                 ROLE,member, */
-    /*                 CONVERSATION,"membership", */
-    /*                     group_addr,member,e_join, */
-    /*                 CONVERSATION,"subscribe", */
-    /*                     channel_addr,proxy_addr,e_sub, */
-    /*                 CONVERSATION,"crud", */
-    /*                     proxy_addr,member,e_crud, */
-    /*                 CONVERSATION,"act", */
-    /*                     member,proxy_addr,e_act, */
+    /* T *e_join, *e_sub, *e_crud, *e_act; */
+    /* T *g_d = _o_make_protocol_def(table, "talking", */
+    /*                 ROLE, channel_addr, */
+    /*                 ROLE, group_addr, */
+    /*                 ROLE, proxy_addr, */
+    /*                 ROLE, member, */
+    /*                 CONVERSATION, "membership", */
+    /*                     group_addr, member, e_join, */
+    /*                 CONVERSATION, "subscribe", */
+    /*                     channel_addr, proxy_addr, e_sub, */
+    /*                 CONVERSATION, "crud", */
+    /*                     proxy_addr, member, e_crud, */
+    /*                 CONVERSATION, "act", */
+    /*                     member, proxy_addr, e_act, */
     /*                 NULL_SYMBOL); */
     /* _r_define_protocol(r,) */
     /* T *proc = _t_new_root(IF); */
-    /* T *t = _t_newr(proc,SAY); */
+    /* T *t = _t_new_node(proc,SAY); */
     /* __r_make_addr(t,TO_ADDRESS,C_authChanId);  // @todo find the right address value to use by convention for the auth channel */
-    /* _t_news(t,ASPECT_IDENT,DEFAULT_ASPECT);    // @todo, generalize to allow groups on different aspects */
-    /* _t_news(t,CARRIER,talking); */
-    /* T *w = _t_newr(t,read); */
+    /* _t_new_sym(t,ASPECT_IDENT,DEFAULT_ASPECT);    // @todo, generalize to allow groups on different aspects */
+    /* _t_new_sym(t,CARRIER,talking); */
+    /* T *w = _t_new_node(t,read); */
     /* int pt[] = {SignalEnvelopeIdx,EnvelopeFromIdx,TREE_PATH_TERMINATOR};  // the senders address */
     /* _t_new(w,SIGNAL_REF,pt,sizeof(int)*4); */
 
-    /* t = _t_newr(proc,RESPOND); */
-    /* _t_news(t,RESPONSE_CARRIER,talking); */
+    /* t = _t_new_node(proc,RESPOND); */
+    /* _t_new_sym(t,RESPONSE_CARRIER,talking); */
 
     //  T *e = __r_build_expectation(join,join_stx,join_process,0,0,NULL,NULL);
 
@@ -213,7 +214,7 @@ Receptor *makeGroup(VMHost *v,char *label) {
 
 
 
-    return r;
+    return ceptr;
 }
 
 /** @}*/

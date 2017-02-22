@@ -22,6 +22,7 @@ T *__r_make_definitions();
 T *_r_make_state();
 Receptor *_r_new(SemTable *sem,SemanticID r);
 Receptor *_r_new_receptor_from_package(SemTable *sem,Symbol s,T *p,T *bindings);
+Xaddr _r_load_receptor_package(Receptor *ceptr, TreeNode *ceptr_package);
 T *__r_build_expectation(Symbol carrier,T *pattern,T *action,T *with,T *until,T *using,T *cid);
 void _r_add_expectation(Receptor *r,Aspect aspect,Symbol carrier,T *pattern,T *action,T *with,T *until, T *using,T *cid);
 void __r_add_expectation(Receptor *r,Aspect aspect,T *e);
@@ -77,7 +78,8 @@ Error _r_deliver(Receptor *r, T *signal);
 T *__r_get_aspect(Receptor *r,Aspect aspect);
 T *__r_get_expectations(Receptor *r,Aspect aspect);
 T *__r_get_signals(Receptor *r,Aspect aspect);
-Receptor * __r_get_receptor(T *installed_receptor);
+Receptor *__r_get_receptor(T *installed_receptor);
+Receptor *__r_get_receptor_instance(Receptor *ceptr,Xaddr xaddr);
 
 /*****************  Tree debugging utilities */
 char *__td(Receptor *r,T *t,char *buf);

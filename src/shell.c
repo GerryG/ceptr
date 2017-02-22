@@ -11,20 +11,24 @@
 #include "ceptr.h"
 #include "shell.h"
 
-void addCommand(Receptor *r,ReceptorAddress ox,char *command,char *desc,T *code,T *bindings_handler) {
-    T *expect = _t_new_root(PATTERN);
-    T *s = _t_news(expect,SEMTREX_GROUP,SHELL_COMMAND);
+void addCommand(Receptor *ceptr, ReceptorAddress out_xaddr, char *command,
+                char *desc, TreeNode *code, TreeNode *bindings_handler) {
 
-    T *cm = _sl(s,SHELL_COMMAND);
-    T *vl =  _t_newr(cm,SEMTREX_VALUE_LITERAL);
-    T *vls = _t_newr(vl,SEMTREX_VALUE_SET);
-    _t_new_str(vls,VERB,command);
+    TreeNode *expect = _t_new_root(PATTERN); 
+    _t_new_string(
+      _t_new_node(
+        _t_new_node(
+          _sl(_t_new_sym(expect , SEMTREX_GROUP, SHELL_COMMAND), SHELL_COMMAND),
+           SEMTREX_VALUE_LITERAL
+        ), SEMTREX_VALUE_SET
+      ), VERB, command
+    );
 
-    T *p = _t_new_root(SAY);
-    __r_make_addr(p,TO_ADDRESS,ox);
+    TreeNode *say = _t_new_root(SAY);
+    __r_make_addr(say, TO_ADDRESS, out_xaddr);
 
-    _t_news(p,ASPECT_IDENT,DEFAULT_ASPECT);
-    _t_news(p,CARRIER,NULL_SYMBOL);
+    _t_new_sym(say, ASPECT_IDENT, DEFAULT_ASPECT);
+    _t_new_sym(say, CARRIER, NULL_SYMBOL);
 
     // if code is actually an INITIATE then we will have a bindings handler
     // to which we want to add the SAY command as the ACTUAL_PROCESS
@@ -32,99 +36,111 @@ void addCommand(Receptor *r,ReceptorAddress ox,char *command,char *desc,T *code,
     // initiation.  Kinda weird, I know...
     if (bindings_handler) {
         char proc_name[255] = "handle ";
-        strcpy(&proc_name[7],command);
-        int pt1[] = {2,1,TREE_PATH_TERMINATOR};
-        _t_new(p,PARAM_REF,pt1,sizeof(int)*3);
-        Process proc = _r_define_process(r,p,proc_name,"long desc...",NULL,NULL);
-        _t_news(bindings_handler,ACTUAL_PROCESS,proc);
-        p = code;
+        strcpy(&proc_name[7], command);
+        int pt1[] = {2, 1, TREE_PATH_TERMINATOR};
+        _t_new(say, PARAM_REF, pt1, sizeof(int)*3);
+        Process proc = _r_define_process(ceptr, say, proc_name, "long desc...", NULL, NULL);
+        _t_new_sym(bindings_handler, ACTUAL_PROCESS, proc);
+        say = code;
     }
     else {
-        _t_add(p,code);
+        _t_add(say, code);
     }
 
-    Process proc = _r_define_process(r,p,desc,"long desc...",NULL,NULL);
-    T *act = _t_newp(0,ACTION,proc);
+    Process proc = _r_define_process(ceptr, say, desc, "long desc...", NULL, NULL);
+    TreeNode *act = _t_newp(0, ACTION, proc);
 
-    _r_add_expectation(r,DEFAULT_ASPECT,SHELL_COMMAND,expect,act,0,0,NULL,NULL);
+    _r_add_expectation(ceptr, DEFAULT_ASPECT, SHELL_COMMAND, expect, act, 0, 0, NULL, NULL);
 }
 
-void makeShell(VMHost *v,FILE *input, FILE *output,Receptor **irp,Receptor **orp,Stream **isp,Stream **osp) {
+/*
+ * vm         - the host
+ * input      - file handle of stdin
+ * output     - file handle of stdout
+ * error      - should have stderr equiv
+ * in_ceptr   - output ptr for in-ceptr
+ * out_ceptr  - output ptr for out-ceptr
+ * in_stream  - output ptr for the input stream
+ * out_stream - output ptr for the output stream
+ */
+void makeShell(VMHost *vm, FILE *input, FILE *output, Receptor **in_ceptr,
+               Receptor **out_ceptr, Stream **in_stream, Stream **out_stream) {
     // define and then create the shell receptor
-    Symbol shell = _d_define_receptor(v->ceptr->sem,"shell",__r_make_definitions(),DEV_COMPOSITORY_CONTEXT);
-    Receptor *r = _r_new(v->sem,shell);
-    Xaddr shellx = _v_new_receptor(v,v->ceptr,shell,r);
-    _v_activate(v,shellx);
+    Symbol shell = _d_define_receptor(vm->ceptr->sem, "shell", __r_make_definitions(),
+      DEV_COMPOSITORY_CONTEXT);
+    Receptor *shell_ceptr = _r_new(vm->sem, shell);
+    _v_activate(vm, _v_register_ceptr(vm, vm->ceptr, shell, shell_ceptr));
 
-    // create stdin/out receptors
+    // create edge ceptrs for stdin/out (store streams)
+    *out_stream = _st_new_unix_stream(output, 0);
+    *in_stream = _st_new_unix_stream(input, 1);
 
-    Stream *output_stream = *osp = _st_new_unix_stream(output,0);
-    Stream *input_stream = *isp = _st_new_unix_stream(input,1);
+    // create and store edge ceptr - in
+    *in_ceptr = _r_makeStreamEdgeReceptor(vm->sem);
+    _r_addReader(*in_ceptr, *in_stream, shell_ceptr->addr, DEFAULT_ASPECT, parse_line, LINE, false);
+    Xaddr in_xaddr = _v_register_ceptr(vm, vm->ceptr, STREAM_EDGE, *in_ceptr);
+    _v_activate(vm, in_xaddr);
 
-    Receptor *i_r = *irp = _r_makeStreamEdgeReceptor(v->sem);
-    _r_addReader(i_r,input_stream,r->addr,DEFAULT_ASPECT,parse_line,LINE,false);
-    Xaddr ix = _v_new_receptor(v,v->ceptr,STREAM_EDGE,i_r);
-    _v_activate(v,ix);
-
-    Receptor *o_r = *orp = _r_makeStreamEdgeReceptor(v->sem);
-    _r_addWriter(o_r,output_stream,DEFAULT_ASPECT);
-    Xaddr ox = _v_new_receptor(v,v->ceptr,STREAM_EDGE,o_r);
-    _v_activate(v,ox);
+    *out_ceptr = _r_makeStreamEdgeReceptor(vm->sem);
+    _r_addWriter(*out_ceptr, *out_stream, DEFAULT_ASPECT);
+    Xaddr out_xaddr = _v_register_ceptr(vm, vm->ceptr, STREAM_EDGE, *out_ceptr);
+    _v_activate(vm, out_xaddr);
 
     // set up shell to express the line parsing protocol when it receives LINES from the stream reader
     Protocol clp;
-    __sem_get_by_label(v->sem,"PARSE_COMMAND_FROM_LINE",&clp,DEV_COMPOSITORY_CONTEXT);
+    __sem_get_by_label(vm->sem, "PARSE_COMMAND_FROM_LINE", &clp, DEV_COMPOSITORY_CONTEXT);
     T *bindings = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_RECEPTOR);
-    _t_news(w,ROLE,LINE_SENDER);
-    __r_make_addr(w,ACTUAL_RECEPTOR,i_r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
-    _t_news(w,ROLE,COMMAND_RECEIVER);
-    __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_SYMBOL);
-    _t_news(w,USAGE,COMMAND_TYPE);
-    _t_news(w,ACTUAL_SYMBOL,SHELL_COMMAND);
+    T *res = _t_new_node(bindings, RESOLUTION);
+    T *which_ceptr = _t_new_node(res, WHICH_RECEPTOR);
+    _t_new_sym(which_ceptr, ROLE, LINE_SENDER);
+    __r_make_addr(which_ceptr, ACTUAL_RECEPTOR, (*in_ceptr)->addr);
+    res = _t_new_node(bindings, RESOLUTION);
+    which_ceptr = _t_new_node(res, WHICH_RECEPTOR);
+    _t_new_sym(which_ceptr, ROLE, COMMAND_RECEIVER);
+    __r_make_addr(which_ceptr,ACTUAL_RECEPTOR, shell_ceptr->addr);
+    res = _t_new_node(bindings, RESOLUTION);
+    which_ceptr = _t_new_node(res, WHICH_SYMBOL);
+    _t_new_sym(which_ceptr, USAGE, COMMAND_TYPE);
+    _t_new_sym(which_ceptr, ACTUAL_SYMBOL, SHELL_COMMAND);
 
-    _o_express_role(r,clp,COMMAND_RECEIVER,DEFAULT_ASPECT,bindings);
+    _o_express_role(shell_ceptr, clp, COMMAND_RECEIVER, DEFAULT_ASPECT, bindings);
     _t_free(bindings);
 
     // set up shell to use the CLOCK TELL_TIME protocol for the time command
     Protocol time;
-    __sem_get_by_label(v->sem,"time",&time,CLOCK_CONTEXT);
+    __sem_get_by_label(vm->sem, "time", &time, CLOCK_CONTEXT);
     T *code = _t_new_root(INITIATE_PROTOCOL);
-    _t_news(code,PNAME,time);
-    _t_news(code,WHICH_INTERACTION,tell_time);
-    bindings = _t_newr(code,PROTOCOL_BINDINGS);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
-    _t_news(w,ROLE,TIME_HEARER);
-    __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
-    _t_news(w,ROLE,TIME_TELLER);
+    _t_new_sym(code, PNAME, time);
+    _t_new_sym(code, WHICH_INTERACTION, tell_time);
+    bindings = _t_new_node(code, PROTOCOL_BINDINGS);
+    res = _t_new_node(bindings, RESOLUTION);
+    which_ceptr = _t_new_node(res, WHICH_RECEPTOR);
+    _t_new_sym(which_ceptr, ROLE, TIME_HEARER);
+    __r_make_addr(which_ceptr, ACTUAL_RECEPTOR, shell_ceptr->addr);
+    res = _t_new_node(bindings, RESOLUTION);
+    which_ceptr = _t_new_node(res, WHICH_RECEPTOR);
+    _t_new_sym(which_ceptr, ROLE, TIME_TELLER);
     ReceptorAddress clock_addr = {3}; // @todo bogus!!! fix getting clock address somehow
-    __r_make_addr(w,ACTUAL_RECEPTOR,clock_addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_PROCESS);
-    _t_news(w,GOAL,RESPONSE_HANDLER);
+    __r_make_addr(which_ceptr, ACTUAL_RECEPTOR, clock_addr);
+    res = _t_new_node(bindings, RESOLUTION);
+    which_ceptr = _t_new_node(res, WHICH_PROCESS);
+    _t_new_sym(which_ceptr, GOAL, RESPONSE_HANDLER);
 
-    addCommand(r,o_r->addr,"time","get time",code,w);
+    ReceptorAddress out_addr = (*out_ceptr)->addr;
+    addCommand(shell_ceptr, out_addr, "time", "get time", code, which_ceptr);
 
     // (expect (on flux SHELL_COMMAND:receptor) action (send std_out (convert_to_lines (send vmhost receptor-list))))
 
-    code = _t_newi(0,MAGIC,MagicReceptors);
-    addCommand(r,o_r->addr,"receptors","get receptor list",code,NULL);
+    code = _t_new_int(0, MAGIC, MagicReceptors);
+    addCommand(shell_ceptr, out_addr, "receptors", "get receptor list", code, NULL);
 
     // (expect (on flux SHELL_COMMAND:receptor) action (send std_out (convert_to_lines (send vmhost shutdown)))
-    code = _t_newi(0,MAGIC,MagicQuit);
-    addCommand(r,o_r->addr,"quit","shut down the vmhost",code,NULL);
+    code = _t_new_int(0, MAGIC, MagicQuit);
+    addCommand(shell_ceptr, out_addr, "quit", "shut down the vmhost", code, NULL);
 
     // (expect (on flux SHELL_COMMAND:debug) action (send std_out (convert_to_lines (magic toggle debug)))
-    code = _t_newi(0,MAGIC,MagicDebug);
-    addCommand(r,o_r->addr,"debug","toggle debug mode",code,NULL);
+    code = _t_new_int(0, MAGIC, MagicDebug);
+    addCommand(shell_ceptr, out_addr, "debug", "toggle debug mode", code, NULL);
 
 }
 

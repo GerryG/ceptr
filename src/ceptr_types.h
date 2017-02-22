@@ -214,7 +214,7 @@ struct Accounting {
 typedef struct QueElement QueElement, Qe;
 struct QueElement {
     int id;
-    RunTree *context;
+    Runner *context;
     Accounting accounts;
     QueElement *next;
     QueElement *prev;

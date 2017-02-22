@@ -153,7 +153,7 @@ T * _sem_get_label(SemTable *sem,SemanticID s,Symbol label_type) {
 void _sem_add_label(SemTable *sem,SemanticID s,Symbol label_type,char *label) {
     T *def = _sem_get_def(sem,s);
     T *labels  = _t_child(def,DefLabelIdx);
-    _t_new_str(labels,label_type,label);
+    _t_new_string(labels,label_type,label);
 }
 
 Structure _sem_get_symbol_structure(SemTable *sem,Symbol s){

@@ -9,7 +9,7 @@
 #ifndef _CEPTR_SEMTABLE_H
 #define _CEPTR_SEMTABLE_H
 
-SemTable *_sem_new();
+SemTable *_base_sem_table();
 int _sem_new_context(SemTable *sem,T *definitions);
 void _sem_free(SemTable *sem);
 #define _sem_context(sem,s) __sem_context(sem,(s).context)

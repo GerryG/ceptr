@@ -304,7 +304,7 @@ void testTreeConvert() {
 
     // test that converting run-trees works too
 
-    T *n = _t_newr(0,ADD_INT);
+    T *n = _t_new_node(0,ADD_INT);
     _t_newi(n,TEST_INT_SYMBOL,99);
     _t_newi(n,TEST_INT_SYMBOL,100);
 

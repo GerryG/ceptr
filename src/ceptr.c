@@ -8,34 +8,39 @@
 #include "sys_defs.h"
 #include "shell.h"
 
-void setupHTTP(VMHost *v) {
+void setupHTTP(VMHost *vm) {
 
     Symbol HTTP;
-    _sem_get_by_label(v->sem,"HTTP",&HTTP);
+    _sem_get_by_label(vm->sem, "HTTP", &HTTP);
 
     // create empty edge receptor
-    Receptor *r = _r_makeStreamEdgeReceptor(v->sem);
+    Receptor *edge_ceptr = _r_makeStreamEdgeReceptor(vm->sem);
     // instantiate it in the vmhost
-    Xaddr edge = _v_new_receptor(v,v->ceptr,STREAM_EDGE,r);
+    Xaddr edge = _v_register_ceptr(vm, vm->ceptr, STREAM_EDGE, edge_ceptr);
     // set up a socket listener that will transcode ascii to HTTP_REQUEST and send all the received requests to an HTTP aspect on the same receptor
-    T *code = _t_parse(r->sem,0,"(CONVERSE (SCOPE (ITERATE (PARAMS) (STREAM_ALIVE (PARAM_REF:/2/1)) (INITIATE_PROTOCOL (PNAME:HTTP) (WHICH_INTERACTION:backnforth) (PROTOCOL_BINDINGS (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_CLIENT) %)) (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_SERVER) %)) (RESOLUTION (WHICH_PROCESS (GOAL:RESPONSE_HANDLER) (ACTUAL_PROCESS:echo2stream))) (RESOLUTION (WHICH_USAGE (USAGE:RESPONSE_HANDLER_PARAMETERS) (ACTUAL_VALUE (PARAM_REF:/2/1)))) (RESOLUTION (WHICH_VALUE (ACTUAL_SYMBOL:HTTP_REQUEST) (ACTUAL_VALUE (STREAM_READ (PARAM_REF:/2/1) (RESULT_SYMBOL:HTTP_REQUEST)))))) ) ) (STREAM_CLOSE (PARAM_REF:/2/1))) (BOOLEAN:1))",__r_make_addr(0,ACTUAL_RECEPTOR,r->addr),__r_make_addr(0,ACTUAL_RECEPTOR,r->addr));
+    TreeNode *code = _t_parse( edge_ceptr->sem, 0,
+      "(CONVERSE (SCOPE (ITERATE (PARAMS) (STREAM_ALIVE (PARAM_REF:/2/1)) (INITIATE_PROTOCOL (PNAME:HTTP) (WHICH_INTERACTION:backnforth) (PROTOCOL_BINDINGS (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_CLIENT) %)) (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_SERVER) %)) (RESOLUTION (WHICH_PROCESS (GOAL:RESPONSE_HANDLER) (ACTUAL_PROCESS:echo2stream))) (RESOLUTION (WHICH_USAGE (USAGE:RESPONSE_HANDLER_PARAMETERS) (ACTUAL_VALUE (PARAM_REF:/2/1)))) (RESOLUTION (WHICH_VALUE (ACTUAL_SYMBOL:HTTP_REQUEST) (ACTUAL_VALUE (STREAM_READ (PARAM_REF:/2/1) (RESULT_SYMBOL:HTTP_REQUEST)))))) ) ) (STREAM_CLOSE (PARAM_REF:/2/1))) (BOOLEAN:1))",
+       __r_make_addr(0, ACTUAL_RECEPTOR, edge_ceptr->addr),
+       __r_make_addr(0, ACTUAL_RECEPTOR, edge_ceptr->addr) );
     // add an error handler that just completes the iteration
-    T *err_handler = _t_parse(r->sem,0,"(CONTINUE (POP_PATH (PARAM_REF:/4/1/1) (RESULT_SYMBOL:CONTINUE_LOCATION) (POP_COUNT:5)) (CONTINUE_VALUE (BOOLEAN:0)))");
+    TreeNode *err_handler = _t_parse(edge_ceptr->sem, 0,
+      "(CONTINUE (POP_PATH (PARAM_REF:/4/1/1) (RESULT_SYMBOL:CONTINUE_LOCATION) (POP_COUNT:5)) (CONTINUE_VALUE (BOOLEAN:0)))");
 
-    SocketListener *l = _r_addListener(r,8888,code,0,err_handler,DELIM_CRLF);
-    _v_activate(v,edge);
+    // var not used SocketListener *listener =
+    _r_addListener(edge_ceptr, 8888, code, 0, err_handler, DELIM_CRLF);
+    _v_activate(vm, edge);
 
-    T *bindings = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_RECEPTOR);
-    _t_news(w,ROLE,HTTP_SERVER);
-    __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_PROCESS);
-    _t_news(w,GOAL,HTTP_REQUEST_HANDLER);
-    _t_news(w,ACTUAL_PROCESS,fill_i_am);
+    TreeNode *bindings = _t_new_root(PROTOCOL_BINDINGS);
+    TreeNode *res = _t_new_node(bindings, RESOLUTION);
+    TreeNode *which_ceptr = _t_new_node(res, WHICH_RECEPTOR);
+    _t_new_sym(which_ceptr, ROLE, HTTP_SERVER);
+    __r_make_addr(which_ceptr, ACTUAL_RECEPTOR, edge_ceptr->addr);
+    res = _t_new_node(bindings, RESOLUTION);
+    which_ceptr = _t_new_node(res, WHICH_PROCESS);
+    _t_new_sym(which_ceptr, GOAL, HTTP_REQUEST_HANDLER);
+    _t_new_sym(which_ceptr, ACTUAL_PROCESS, fill_i_am);
 
-    _o_express_role(r,HTTP,HTTP_SERVER,HTTP_ASPECT,bindings);
+    _o_express_role(edge_ceptr, HTTP, HTTP_SERVER, HTTP_ASPECT, bindings);
     _t_free(bindings);
 }
 

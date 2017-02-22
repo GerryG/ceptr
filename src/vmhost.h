@@ -57,7 +57,7 @@ void _v_free(VMHost *r);
 
 Xaddr _v_load_receptor_package(VMHost *v,T *p);
 Xaddr _v_install_r(VMHost *v,Xaddr package,T *bindings,char *label);
-Xaddr _v_new_receptor(VMHost *v,Receptor *parent,Symbol s, Receptor *r);
+Xaddr _v_register_ceptr(VMHost *v,Receptor *parent,Symbol s, Receptor *r);
 void _v_activate(VMHost *v, Xaddr x);
 void _v_send(VMHost *v,ReceptorAddress from,ReceptorAddress to,Aspect aspect,Symbol carrier,T *contents);
 void _v_send_signals(VMHost *v,T *signals);

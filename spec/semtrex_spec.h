@@ -181,7 +181,7 @@ void testMatchAny() {
     T *t1 = _t_new(t,sy1,"t1",3);
 
     T *s = _t_new_root(SEMTREX_SYMBOL_ANY);
-    T *ss = _t_newr(s,SEMTREX_SEQUENCE);
+    T *ss = _t_new_node(s,SEMTREX_SEQUENCE);
     T *s1 = _sl(ss, sy1);
 
     spec_is_true(_t_match(s,t));
@@ -198,7 +198,7 @@ void testMatchExcept() {
 
     // //!sy0/sy1
     T *s = _sln(0,sy0);
-    T *ss = _t_newr(s,SEMTREX_SEQUENCE);
+    T *ss = _t_new_node(s,SEMTREX_SEQUENCE);
     T *s1 = _sl(ss,sy1);
     spec_is_true(!_t_match(s,t));
 
@@ -206,7 +206,7 @@ void testMatchExcept() {
 
     // //!sy1/sy1
     s = _sln(0,sy1);
-    ss = _t_newr(s,SEMTREX_SEQUENCE);
+    ss = _t_new_node(s,SEMTREX_SEQUENCE);
     _sl(ss,sy1);
     spec_is_true(_t_match(s,t));
 
@@ -243,7 +243,7 @@ void testMatchStar() {
     T *r;
     T *s = _sl(0,SIGNALS);
     T *g = _t_news(s,SEMTREX_GROUP,SIGNALS);
-    T *ss = _t_newr(g,SEMTREX_ZERO_OR_MORE);
+    T *ss = _t_new_node(g,SEMTREX_ZERO_OR_MORE);
     _sl(ss,SIGNAL);
 
     T *t = _t_new_root(SIGNALS);
@@ -311,7 +311,7 @@ void testMatchPlus() {
     T *r;
     T *s = _sl(0,SIGNALS);
     T *g = _t_news(s,SEMTREX_GROUP,SIGNALS);
-    T *ss = _t_newr(g,SEMTREX_ONE_OR_MORE);
+    T *ss = _t_new_node(g,SEMTREX_ONE_OR_MORE);
     _sl(ss,SIGNAL);
 
     T *t = _t_new_root(SIGNALS);
@@ -343,7 +343,7 @@ void testMatchQ() {
     T *r;
     T *s = _sl(0,SIGNALS);
     T *g = _t_news(s,SEMTREX_GROUP,SIGNALS);
-    T *ss = _t_newr(g,SEMTREX_ZERO_OR_ONE);
+    T *ss = _t_new_node(g,SEMTREX_ZERO_OR_ONE);
     _sl(ss,SIGNAL);
 
     T *t = _t_new_root(SIGNALS);
@@ -391,13 +391,13 @@ void testMatchGroup() {
 
     // /TEST_STR_SYMBOL/(<TEST_GROUP_SYMBOL1:.*,<TEST_GROUP_SYMBOL2:.>>,sy4)  <- a more complicated group semtrex
     T *s = _sl(0,TEST_STR_SYMBOL);
-    T *ss = _t_newr(s,SEMTREX_SEQUENCE);
+    T *ss = _t_new_node(s,SEMTREX_SEQUENCE);
     T *sg = _t_news(ss,SEMTREX_GROUP,TEST_GROUP_SYMBOL1);
-    T *ss2 = _t_newr(sg,SEMTREX_SEQUENCE);
-    T *st = _t_newr(ss2,SEMTREX_ZERO_OR_MORE);
-    _t_newr(st,SEMTREX_SYMBOL_ANY);
+    T *ss2 = _t_new_node(sg,SEMTREX_SEQUENCE);
+    T *st = _t_new_node(ss2,SEMTREX_ZERO_OR_MORE);
+    _t_new_node(st,SEMTREX_SYMBOL_ANY);
     sg2 = _t_news(ss2,SEMTREX_GROUP,TEST_GROUP_SYMBOL2);
-    _t_newr(sg2,SEMTREX_SYMBOL_ANY);
+    _t_new_node(sg2,SEMTREX_SYMBOL_ANY);
     s3 = _sl(ss,sy4);
 
     //debug_enable(D_STX_MATCH);
@@ -436,11 +436,11 @@ void testMatchGroup() {
     // sequence that includes the final sibiling
     // /TEST_STR_SYMBOL/.*,<TEST_GROUP_SYMBOL:sy3,sy4>
     s = _sl(0,TEST_STR_SYMBOL);
-    ss = _t_newr(s,SEMTREX_SEQUENCE);
-    st = _t_newr(ss,SEMTREX_ZERO_OR_MORE);
-    _t_newr(st,SEMTREX_SYMBOL_ANY);
+    ss = _t_new_node(s,SEMTREX_SEQUENCE);
+    st = _t_new_node(ss,SEMTREX_ZERO_OR_MORE);
+    _t_new_node(st,SEMTREX_SYMBOL_ANY);
     sg = _t_news(ss,SEMTREX_GROUP,TEST_GROUP_SYMBOL1);
-    ss2 = _t_newr(sg,SEMTREX_SEQUENCE);
+    ss2 = _t_new_node(sg,SEMTREX_SEQUENCE);
     _sl(ss2,sy3);
     _sl(ss2,sy4);
     //debug_enable(D_STX_MATCH);
@@ -455,10 +455,10 @@ void testMatchGroup() {
     _t_free(g);
 
     sg = _t_news(0,SEMTREX_GROUP,VERB);
-    s = _t_newr(sg,SEMTREX_SYMBOL_LITERAL);
+    s = _t_new_node(sg,SEMTREX_SYMBOL_LITERAL);
     _t_news(s,SEMTREX_SYMBOL,LINE);
 
-    t = _t_new_str(0,LINE,"receptors");
+    t = _t_new_string(0,LINE,"receptors");
     spec_is_true(_t_matchr(sg,t,&r));
     spec_is_str_equal(t2s(r), "(SEMTREX_MATCH:1 (SEMTREX_MATCH_SYMBOL:VERB) (SEMTREX_MATCH_PATH:/) (SEMTREX_MATCH_SIBLINGS_COUNT:1))");
 
@@ -484,9 +484,9 @@ void testMatchGroupMulti() {
 
     T *ts = _t_news(0,SEMTREX_GROUP,STX_TOKENS);
     T *g = _sl(ts,ASCII_CHARS);
-    T *sq = _t_newr(g,SEMTREX_SEQUENCE);
-    T *p = _t_newr(sq,SEMTREX_ONE_OR_MORE);
-    T *o = _t_newr(p,SEMTREX_OR);
+    T *sq = _t_new_node(g,SEMTREX_SEQUENCE);
+    T *p = _t_new_node(sq,SEMTREX_ONE_OR_MORE);
+    T *o = _t_new_node(p,SEMTREX_OR);
     T *t = _t_news(o,SEMTREX_GROUP,STX_SL);
     __stxcv(t,'/');
     t = _t_news(o,SEMTREX_GROUP,STX_OP);
@@ -504,8 +504,8 @@ void testMatchGroupMulti() {
 
 T *newvl(T *p,int not,int count,...) {
     va_list values;
-    T *t =  _t_newr(p,not ? SEMTREX_VALUE_LITERAL_NOT : SEMTREX_VALUE_LITERAL);
-    T *v = _t_newr(t,SEMTREX_VALUE_SET);
+    T *t =  _t_new_node(p,not ? SEMTREX_VALUE_LITERAL_NOT : SEMTREX_VALUE_LITERAL);
+    T *v = _t_new_node(t,SEMTREX_VALUE_SET);
 
     va_start(values,count);
     int i;
@@ -606,7 +606,7 @@ void testMatchDescend() {
 
     // ///sy11
     s = _t_new_root(SEMTREX_DESCEND);
-    T *ss = _t_newr(s,SEMTREX_DESCEND);
+    T *ss = _t_new_node(s,SEMTREX_DESCEND);
     _sl(ss,sy11);
     spec_is_true(_t_match(s,t));
     _t_free(s);
@@ -645,7 +645,7 @@ void testMatchWalk() {
     //debug_enable(D_STX_MATCH);
     s = _t_new_root(SEMTREX_WALK);
     T *g = _t_news(s,SEMTREX_GROUP,TEST_GROUP_SYMBOL1);
-    T *sq = _t_newr(g,SEMTREX_SEQUENCE);
+    T *sq = _t_new_node(g,SEMTREX_SEQUENCE);
     _sl(sq,sy3);
     _sl(sq,sy4);
     T *results;
@@ -673,14 +673,14 @@ void testMatchNot() {
 
     //  /TEST_STR_SYMBOL/~sy2
     T *s = _sl(0,TEST_STR_SYMBOL);
-    T *n = _t_newr(s,SEMTREX_NOT);
+    T *n = _t_new_node(s,SEMTREX_NOT);
     n = _sl(n,sy2);
     spec_is_true(_t_match(s,t));
     _t_free(s);
 
     //  /TEST_STR_SYMBOL/~sy1
     s = _sl(0,TEST_STR_SYMBOL);
-    n = _t_newr(s,SEMTREX_NOT);
+    n = _t_new_node(s,SEMTREX_NOT);
     n = _sl(n,sy1);
     spec_is_true(!_t_match(s,t));
     _t_free(s);
@@ -693,26 +693,26 @@ void testMatchNot() {
     sX(G,NULL_STRUCTURE);
 
     t = _t_new_root(R);
-    _t_newr(t,A);
-    _t_newr(t,B);
-    _t_newr(t,A);
-    _t_newr(t,B);
-    _t_newr(t,B);
-    _t_newr(t,C);
+    _t_new_node(t,A);
+    _t_new_node(t,B);
+    _t_new_node(t,A);
+    _t_new_node(t,B);
+    _t_new_node(t,B);
+    _t_new_node(t,C);
 
     char buf[2000];
     T *g,*x,*results;
 
-    s = _t_newr(0,SEMTREX_WALK);
+    s = _t_new_node(0,SEMTREX_WALK);
     g = _t_news(s,SEMTREX_GROUP,G);
-    x = _t_newr(g,SEMTREX_SEQUENCE);
-    //   x = _t_newr(x,SEMTREX_NOT);
+    x = _t_new_node(g,SEMTREX_SEQUENCE);
+    //   x = _t_new_node(x,SEMTREX_NOT);
     //_sl(x,A);
 
     _sl(x,B);
-    n = _t_newr(x,SEMTREX_NOT);
+    n = _t_new_node(x,SEMTREX_NOT);
     _sl(n,A);
-    n = _t_newr(x,SEMTREX_NOT);
+    n = _t_new_node(x,SEMTREX_NOT);
     _sl(n,A);
     spec_is_str_equal(_dump_semtrex(G_sem,s,buf),"");
 
@@ -748,13 +748,13 @@ void testSemtrexDump() {
 
     // /TEST_STR_SYMBOL/<.*,<.>>,4  <- a more complicated group semtrex
     s = _sl(0,TEST_STR_SYMBOL);
-    T *ss = _t_newr(s,SEMTREX_SEQUENCE);
+    T *ss = _t_new_node(s,SEMTREX_SEQUENCE);
     T *sg = _t_news(ss,SEMTREX_GROUP,TEST_GROUP_SYMBOL1);
-    T *ss2 = _t_newr(sg,SEMTREX_SEQUENCE);
-    T *st = _t_newr(ss2,SEMTREX_ZERO_OR_MORE);
-    _t_newr(st,SEMTREX_SYMBOL_ANY);
+    T *ss2 = _t_new_node(sg,SEMTREX_SEQUENCE);
+    T *st = _t_new_node(ss2,SEMTREX_ZERO_OR_MORE);
+    _t_new_node(st,SEMTREX_SYMBOL_ANY);
     T *sg2 = _t_news(ss2,SEMTREX_GROUP,TEST_GROUP_SYMBOL2);
-    _t_newr(sg2,SEMTREX_SYMBOL_ANY);
+    _t_new_node(sg2,SEMTREX_SYMBOL_ANY);
     T *s3 = _sl(ss,sy4);
     spec_is_str_equal(_dump_semtrex(G_sem,s,buf),"/TEST_STR_SYMBOL/(<TEST_GROUP_SYMBOL1:.*,<TEST_GROUP_SYMBOL2:.>>,sy4)");
     _t_free(s);
@@ -784,7 +784,7 @@ void testSemtrexDump() {
 
     //  /TEST_STR_SYMBOL/~sy1
     s = _sl(0,TEST_STR_SYMBOL);
-    T *n = _t_newr(s,SEMTREX_NOT);
+    T *n = _t_new_node(s,SEMTREX_NOT);
     n = _sl(n,sy1);
     spec_is_str_equal(_dump_semtrex(G_sem,s,buf),"/TEST_STR_SYMBOL/~sy1");
     _t_free(s);
@@ -966,19 +966,19 @@ void testSemtrexReplace() {
     // %EXPECT/.*,<ACTION:GOAL=some_process>
     T *stx = _t_new_root(SEMTREX_WALK);
     T *s = _sl(stx,EXPECT);
-    s = _t_newr(s,SEMTREX_SEQUENCE);
-    _t_newr(_t_newr(s,SEMTREX_ZERO_OR_MORE),SEMTREX_SYMBOL_ANY);
+    s = _t_new_node(s,SEMTREX_SEQUENCE);
+    _t_new_node(_t_new_node(s,SEMTREX_ZERO_OR_MORE),SEMTREX_SYMBOL_ANY);
     T *g = _t_news(s,SEMTREX_GROUP,ACTION);
-    T *vl = _t_newr(g,SEMTREX_VALUE_LITERAL);
+    T *vl = _t_new_node(g,SEMTREX_VALUE_LITERAL);
     Symbol some_process = _d_define_symbol(G_sem,PROCESS,"some_process",TEST_CONTEXT);
     Symbol some_interaction = _d_define_symbol(G_sem,INTERACTION,"some_interaction",TEST_CONTEXT);
     _t_news(vl,GOAL,some_process);
 
     T *d = _t_new_root(some_interaction);
-    T *e = _t_newr(d,EXPECT);
-    //    _t_newr(rp,ROLE);
-    //    _t_newr(rp,SOURCE);
-    _t_newr(e,PATTERN);
+    T *e = _t_new_node(d,EXPECT);
+    //    _t_new_node(rp,ROLE);
+    //    _t_new_node(rp,SOURCE);
+    _t_new_node(e,PATTERN);
     _t_news(e,GOAL,some_process);
 
     T *a = _t_news(0,ACTION,RESPOND);

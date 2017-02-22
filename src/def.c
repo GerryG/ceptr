@@ -83,9 +83,9 @@ void __d_set_structure_def(T *structures,Structure s,T *def) {
 Symbol _d_define_symbol(SemTable *sem,Structure s,char *label,Context c){
     __d_validate_structure(sem,s,label);
     T *def = _t_new_root(SYMBOL_DEFINITION);
-    T *l = _t_newr(def,SYMBOL_LABEL);
-    _t_new_str(l,ENGLISH_LABEL,label);
-    _t_news(def,SYMBOL_STRUCTURE,s);
+    T *l = _t_new_node(def,SYMBOL_LABEL);
+    _t_new_string(l,ENGLISH_LABEL,label);
+    _t_new_sym(def,SYMBOL_STRUCTURE,s);
 
     return _d_define(sem,def,SEM_TYPE_SYMBOL,c);
 }
@@ -103,8 +103,8 @@ Symbol _d_define_symbol(SemTable *sem,Structure s,char *label,Context c){
  */
 Structure _d_define_structure(SemTable *sem,char *label,T *structure_def,Context c) {
     T *def = _t_new_root(STRUCTURE_DEFINITION);
-    T *l = _t_newr(def,STRUCTURE_LABEL);
-    _t_new_str(l,ENGLISH_LABEL,label);
+    T *l = _t_new_node(def,STRUCTURE_LABEL);
+    _t_new_string(l,ENGLISH_LABEL,label);
     if (structure_def) _t_add(def,structure_def);
     return _d_define(sem,def,SEM_TYPE_STRUCTURE,c);
 }
@@ -133,12 +133,12 @@ Structure _d_define_structure_v(SemTable *sem,char *label,Context c,int num_para
 T * _d_make_vstruc_def(SemTable *sem,char *label,int num_params,va_list params) {
     T *p,*seq = 0;
     if (num_params > 1)
-        seq = _t_newr(0,STRUCTURE_SEQUENCE);
+        seq = _t_new_node(0,STRUCTURE_SEQUENCE);
     int i;
     for(i=0;i<num_params;i++) {
         Symbol s = va_arg(params,Symbol);
         __d_validate_symbol(sem,s,label);
-        p = _t_news(seq,STRUCTURE_SYMBOL,s);
+        p = _t_new_sym(seq,STRUCTURE_SYMBOL,s);
     }
     return seq ? seq : p;
 }
@@ -301,8 +301,8 @@ void __d_tsig(SemTable *sem,T *code, T *tsig,TreeHash *hashes) {
  */
 T *_d_make_process_def(T *code,char *name,char *intention,T *signature,T *link) {
     T *def = _t_new_root(PROCESS_DEFINITION);
-    T *l = _t_newr(def,PROCESS_NAME);
-    _t_new_str(l,ENGLISH_LABEL,name);
+    T *l = _t_new_node(def,PROCESS_NAME);
+    _t_new_string(l,ENGLISH_LABEL,name);
     _t_new(def,PROCESS_INTENTION,intention,strlen(intention)+1);
     if (!code)
         code = _t_new_root(NULL_PROCESS); // indicates a system (i.e. non ceptr) defined process
@@ -369,7 +369,7 @@ T *__d_build_def_semtrex(SemTable *sem,T *def,T *stx) {
     else if (semeq(def_sym,STRUCTURE_SEQUENCE)) {
         int i,c = _t_children(def);
         if (c > 0) {
-            stx = _t_newr(stx,SEMTREX_SEQUENCE);
+            stx = _t_new_node(stx,SEMTREX_SEQUENCE);
             for(i=1;i<=c;i++) {
                 __d_build_def_semtrex(sem,_t_child(def,i),stx);
             }
@@ -378,7 +378,7 @@ T *__d_build_def_semtrex(SemTable *sem,T *def,T *stx) {
     else if (semeq(def_sym,STRUCTURE_OR)) {
         int i,c = _t_children(def);
         if (c == 1) {
-            stx = _t_newr(stx,SEMTREX_ZERO_OR_ONE);
+            stx = _t_new_node(stx,SEMTREX_ZERO_OR_ONE);
             __d_build_def_semtrex(sem,_t_child(def,1),stx);
         }
         else if (c > 1) {
@@ -398,17 +398,17 @@ T *__d_build_def_semtrex(SemTable *sem,T *def,T *stx) {
         }
     }
     else if (semeq(def_sym,STRUCTURE_ANYTHING)) {
-        stx = _t_newr(stx,SEMTREX_ZERO_OR_MORE);
-        stx = _t_newr(stx,SEMTREX_SYMBOL_ANY);
+        stx = _t_new_node(stx,SEMTREX_ZERO_OR_MORE);
+        stx = _t_new_node(stx,SEMTREX_SYMBOL_ANY);
         if (_t_children(def))
             __d_build_def_semtrex(sem,_t_child(def,1),stx);
     }
     else if (semeq(def_sym,STRUCTURE_ZERO_OR_MORE)) {
-        stx = _t_newr(stx,SEMTREX_ZERO_OR_MORE);
+        stx = _t_new_node(stx,SEMTREX_ZERO_OR_MORE);
         __d_build_def_semtrex(sem,_t_child(def,1),stx);
     }
     else if (semeq(def_sym,STRUCTURE_ONE_OR_MORE)) {
-        stx = _t_newr(stx,SEMTREX_ONE_OR_MORE);
+        stx = _t_new_node(stx,SEMTREX_ONE_OR_MORE);
         __d_build_def_semtrex(sem,_t_child(def,1),stx);
     }
     else {
@@ -457,8 +457,8 @@ T * _d_build_def_semtrex(SemTable *sem,Symbol s,T *parent) {
 SemanticID _d_define_receptor(SemTable *sem,char *label,T *definitions,Context c) {
 
     T *def = _t_new_root(RECEPTOR_DEFINITION);
-    T *l=_t_newr(def,RECEPTOR_LABEL);
-    _t_new_str(l,ENGLISH_LABEL,label);
+    T *l=_t_new_node(def,RECEPTOR_LABEL);
+    _t_new_string(l,ENGLISH_LABEL,label);
     _t_add(def,definitions);
 
     return __d_define_receptor(sem,def,c);

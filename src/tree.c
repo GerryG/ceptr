@@ -12,31 +12,34 @@
 #include "tree.h"
 
 /*****************  Node creation */
-void __t_append_child(T *t,T *c) {
-    if (t->structure.child_count == 0) {
-        t->structure.children = malloc(sizeof(T *)*TREE_CHILDREN_BLOCK);
-    } else if (!(t->structure.child_count % TREE_CHILDREN_BLOCK)){
-        int b = t->structure.child_count/TREE_CHILDREN_BLOCK + 1;
-        t->structure.children = realloc(t->structure.children,sizeof(T *)*(TREE_CHILDREN_BLOCK*b));
-    }
+void __t_append_child(TreeNode *parent, TreeNode *child) {
+    const int tree_blk_size = sizeof(TreeNode *)*TREE_CHILDREN_BLOCK;
+    int child_count = parent->structure.child_count++;
+    if (child_count == 0) {
+        parent->structure.children = malloc(tree_blk_size);
+    } else if (!(child_count % TREE_CHILDREN_BLOCK)){
+        int new_size = (child_count/TREE_CHILDREN_BLOCK + 1) * tree_blk_size;
+        parent->structure.children =
+          realloc(parent->structure.children, new_size);
+    } // else we fill the last slot in the current block
 
-    t->structure.children[t->structure.child_count++] = c;
+    parent->structure.children[child_count] = child;
 }
 
-T * __t_init(T *parent,Symbol symbol,bool is_run_node) {
-    T *t = malloc(is_run_node ? sizeof(rT) : sizeof(T));
-    t->structure.child_count = 0;
-    t->structure.parent = parent;
-    t->contents.symbol = symbol;
-    t->context.flags = 0;
+TreeNode * __t_init(TreeNode *parent, Symbol symbol, bool is_run_node) {
+    TreeNode *node = malloc(is_run_node ? sizeof(RunTree) : sizeof(TreeNode));
+    node->structure.child_count = 0;
+    node->structure.parent = parent;
+    node->contents.symbol = symbol;
+    node->context.flags = 0;
     if (is_run_node) {
-        ((rT *)t)->cur_child = RUN_TREE_NOT_EVAULATED;
-        t->context.flags |= TFLAG_RUN_NODE;
+        ((RunTree *)node)->cur_child = RUN_TREE_NOT_EVAULATED;
+        node->context.flags |= TFLAG_RUN_NODE;
     }
     if (parent != NULL) {
-        __t_append_child(parent,t);
+        __t_append_child(parent, node);
     }
-    return t;
+    return node;
 }
 
 /**
@@ -48,22 +51,22 @@ T * __t_init(T *parent,Symbol symbol,bool is_run_node) {
  * @param[in] size size in bytes of the surface
  * @returns pointer to node allocated on the heap
  */
-T * __t_new(T *parent,Symbol symbol,void *surface,size_t size,bool is_run_node) {
-    T *t = __t_init(parent,symbol,is_run_node);
-    if (is_run_node) t->context.flags |= TFLAG_RUN_NODE;
+TreeNode * __t_new(TreeNode *parent, Symbol symbol, void *surface, size_t size, bool is_run_node) {
+    TreeNode *node = __t_init(parent, symbol, is_run_node);
+    if (is_run_node) node->context.flags |= TFLAG_RUN_NODE;
     if (size && surface) {
         void *dst;
         if (size <= sizeof(void *)) {
-            dst = &t->contents.surface;
+            dst = &node->contents.surface;
         }
         else {
-            t->context.flags |= TFLAG_ALLOCATED;
-            dst = t->contents.surface = malloc(size);
+            node->context.flags |= TFLAG_ALLOCATED;
+            dst = node->contents.surface = malloc(size);
         }
-        memcpy(dst,surface,size);
+        memcpy(dst, surface, size);
     }
-    t->contents.size = size;
-    return t;
+    node->contents.size = size;
+    return node;
 }
 
 /**
@@ -74,8 +77,8 @@ T * __t_new(T *parent,Symbol symbol,void *surface,size_t size,bool is_run_node) 
  * @param[in] surface char value to store in the surface
  * @returns pointer to node allocated on the heap
  */
-T * __t_newc(T *parent,Symbol symbol,char surface,bool is_run_node) {
-    return __t_new(parent,symbol,&surface,sizeof(char),is_run_node);
+TreeNode * __t_new_char(TreeNode *parent, Symbol symbol, char surface, bool is_run_node) {
+    return __t_new(parent, symbol, &surface, sizeof(char), is_run_node);
 }
 
 /**
@@ -86,8 +89,8 @@ T * __t_newc(T *parent,Symbol symbol,char surface,bool is_run_node) {
  * @param[in] surface integer value to store in the surface
  * @returns pointer to node allocated on the heap
  */
-T * __t_newi(T *parent,Symbol symbol,int surface,bool is_run_node) {
-    return __t_new(parent,symbol,&surface,sizeof(int),is_run_node);
+TreeNode * __t_new_int(TreeNode *parent, Symbol symbol, int surface, bool is_run_node) {
+    return __t_new(parent, symbol, &surface, sizeof(int), is_run_node);
 }
 
 /**
@@ -98,8 +101,8 @@ T * __t_newi(T *parent,Symbol symbol,int surface,bool is_run_node) {
  * @param[in] surface long integer value to store in the surface
  * @returns pointer to node allocated on the heap
  */
-T * __t_newi64(T *parent,Symbol symbol,long surface,bool is_run_node) {
-    return __t_new(parent,symbol,&surface,sizeof(long),is_run_node);
+TreeNode * __t_new_int64(TreeNode *parent, Symbol symbol, long surface, bool is_run_node) {
+    return __t_new(parent, symbol, &surface, sizeof(long), is_run_node);
 }
 
 /**
@@ -110,8 +113,8 @@ T * __t_newi64(T *parent,Symbol symbol,long surface,bool is_run_node) {
  * @param[in] surface semanticID value to store in the surface
  * @returns pointer to node allocated on the heap
  */
-T *__t_news(T *parent,Symbol symbol,SemanticID surface,bool is_run_node){
-    return __t_new(parent,symbol,&surface,sizeof(SemanticID),is_run_node);
+TreeNode *__t_new_sym(TreeNode *parent, Symbol symbol, SemanticID surface, bool is_run_node){
+    return __t_new(parent, symbol, &surface, sizeof(SemanticID), is_run_node);
 }
 
 /**
@@ -122,10 +125,10 @@ T *__t_news(T *parent,Symbol symbol,SemanticID surface,bool is_run_node){
  * @param[in] surface pointer to tree to store as an orthogonal tree in the surface
  * @returns pointer to node allocated on the heap
  */
-T * _t_newt(T *parent,Symbol symbol,T *surface) {
-    T *t = __t_init(parent,symbol,false);
-    *((T **)&t->contents.surface) = surface;
-    t->contents.size = sizeof(T *);
+TreeNode * _t_new_tree(TreeNode *parent, Symbol symbol, TreeNode *surface) {
+    TreeNode *node = __t_init(parent, symbol, false);
+    *((TreeNode **)&node->contents.surface) = surface;
+    node->contents.size = sizeof(TreeNode *);
 
     t->context.flags |= TFLAG_SURFACE_IS_TREE;
     return t;
@@ -139,8 +142,8 @@ T * _t_newt(T *parent,Symbol symbol,T *surface) {
  * @param[in] surface string value to store in the surface
  * @returns pointer to node allocated on the heap
  */
-T * __t_new_str(T *parent,Symbol symbol,char *surface,bool is_run_node) {
-    return __t_new(parent,symbol,surface,strlen(surface)+1,is_run_node);
+TreeNode * __t_new_string(TreeNode *parent, Symbol symbol, char *surface, bool is_run_node) {
+    return __t_new(parent, symbol, surface, strlen(surface)+1, is_run_node);
 }
 
 /**
@@ -149,8 +152,8 @@ T * __t_new_str(T *parent,Symbol symbol,char *surface,bool is_run_node) {
  * @param[in] symbol semantic symbol for the node to be create
  * @returns pointer to node allocated on the heap
  */
-T *_t_new_root(Symbol symbol) {
-    return _t_new(0,symbol,0,0);
+TreeNode *_t_new_root(Symbol symbol) {
+    return _t_new(0, symbol, 0, 0);
 }
 
 /**
@@ -160,7 +163,7 @@ T *_t_new_root(Symbol symbol) {
  * @param[in] symbol semantic symbol for the node to be create
  * @returns pointer to node allocated on the heap
  */
-T *__t_newr(T *parent,Symbol symbol,bool is_run_node) {
+TreeNode *__t_new_node(TreeNode *parent,Symbol symbol,bool is_run_node) {
     return __t_new(parent,symbol,0,0,is_run_node);
 }
 
@@ -168,8 +171,8 @@ T *__t_newr(T *parent,Symbol symbol,bool is_run_node) {
    i.e. a receptor, scape, or stream, these nodes get cloned as references
    so the c-structure isn't double freed
 */
-T *__t_new_special(T *parent,Symbol symbol,void *s,int flag,bool is_run_node) {
-    T *t = __t_init(parent,symbol,is_run_node);
+TreeNode *__t_new_special(TreeNode *parent,Symbol symbol,void *s,int flag,bool is_run_node) {
+    TreeNode *t = __t_init(parent,symbol,is_run_node);
     t->contents.surface = s;
     t->contents.size = sizeof(void *);
 
@@ -181,7 +184,7 @@ T *__t_new_special(T *parent,Symbol symbol,void *s,int flag,bool is_run_node) {
 /**
  * Create a new tree node with a receptor as it's surface
  *
- * this is just like _t_newt except that it uses a different flag because
+ * this is just like _t_new_tree except that it uses a different flag because
  * when cleaning up we'll need to know that this is a full receptor, not just
  * a plain tree
  *
@@ -193,8 +196,8 @@ T *__t_new_special(T *parent,Symbol symbol,void *s,int flag,bool is_run_node) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeNewReceptor
  */
-T *_t_new_receptor(T *parent,Symbol symbol,Receptor *r) {
-    T *t = __t_new_special(parent,symbol,r,TFLAG_SURFACE_IS_TREE+TFLAG_SURFACE_IS_RECEPTOR,0);
+TreeNode *_t_new_receptor(TreeNode *parent,Symbol symbol,Receptor *r) {
+    TreeNode *t = __t_new_special(parent,symbol,r,TFLAG_SURFACE_IS_TREE+TFLAG_SURFACE_IS_RECEPTOR,0);
     return t;
 }
 
@@ -211,7 +214,7 @@ T *_t_new_receptor(T *parent,Symbol symbol,Receptor *r) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeScape
  */
-T *_t_new_scape(T *parent,Symbol symbol,Scape *s) {
+TreeNode *_t_new_scape(TreeNode *parent,Symbol symbol,Scape *s) {
     return __t_new_special(parent,symbol,s,TFLAG_SURFACE_IS_SCAPE,0);
 }
 
@@ -228,7 +231,7 @@ T *_t_new_scape(T *parent,Symbol symbol,Scape *s) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeStream
  */
-T *_t_new_cptr(T *parent,Symbol symbol,void *s) {
+TreeNode *_t_new_ceptr(TreeNode *parent,Symbol symbol,void *s) {
     return __t_new_special(parent,symbol,s,TFLAG_SURFACE_IS_CPTR+TFLAG_REFERENCE,0);
 }
 
@@ -240,8 +243,8 @@ T *_t_new_cptr(T *parent,Symbol symbol,void *s) {
  * @param[in] surface Process value
  * @returns pointer to node allocated on the heap
  */
-T * _t_newp(T *parent,Symbol symbol,Process surface) {
-    return _t_news(parent,symbol,surface);
+TreeNode * _t_newp(TreeNode *parent,Symbol symbol,Process surface) {
+    return _t_new_sym(parent,symbol,surface);
 }
 
 /**
@@ -250,7 +253,7 @@ T * _t_newp(T *parent,Symbol symbol,Process surface) {
  * @param[in] t tree onto which c will be added
  * @param[in] c tree to add onto t
  */
-void _t_add(T *t,T *c) {
+void _t_add(TreeNode *t,TreeNode *c) {
     root_check(c);
     c->structure.parent = t;
     __t_append_child(t,c);
@@ -267,8 +270,8 @@ void _t_add(T *t,T *c) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeDetach
  */
-T *_t_detach_by_idx(T *t,int i) {
-    T *x = _t_child(t,i);
+TreeNode *_t_detach_by_idx(TreeNode *t,int i) {
+    TreeNode *x = _t_child(t,i);
     _t_detach_by_ptr(t,x);
     return x;
 }
@@ -280,7 +283,7 @@ T *_t_detach_by_idx(T *t,int i) {
  * @param[in] t node to search
  * @param[in] c node to search for in child list
  */
-void _t_detach_by_ptr(T *t,T *c) {
+void _t_detach_by_ptr(TreeNode *t,TreeNode *c) {
     // search for the child to be removed
     DO_KIDS(t,
             if (_t_child(t,i) == c) {
@@ -314,7 +317,7 @@ void _t_detach_by_ptr(T *t,T *c) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeMorphLowLevel
  */
-void __t_morph(T *t,Symbol s,void *surface,size_t size,int allocate) {
+void __t_morph(TreeNode *t,Symbol s,void *surface,size_t size,int allocate) {
     t->contents.size = size;
     if (t->context.flags & TFLAG_ALLOCATED) {
         free(t->contents.surface);
@@ -346,7 +349,7 @@ void __t_morph(T *t,Symbol s,void *surface,size_t size,int allocate) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeMorph
  */
-void _t_morph(T *dst,T *src) {
+void _t_morph(TreeNode *dst,TreeNode *src) {
     __t_morph(dst,_t_symbol(src),_t_surface(src),_t_size(src),src->context.flags & TFLAG_ALLOCATED);
 }
 
@@ -361,8 +364,8 @@ void _t_morph(T *dst,T *src) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeReplace
  */
-void _t_replace(T *t,int i,T *r) {
-    T *c = _t_child(t,i);
+void _t_replace(TreeNode *t,int i,TreeNode *r) {
+    TreeNode *c = _t_child(t,i);
     if (!c) {raise_error("tree doesn't have child %d",i);}
     _t_free(c);
     t->structure.children[i-1] = r;
@@ -380,7 +383,7 @@ void _t_replace(T *t,int i,T *r) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeReplace
  */
-void _t_replace_node(T *t,T *r) {
+void _t_replace_node(TreeNode *t,TreeNode *r) {
     root_check(r);
     if  ((t->context.flags & TFLAG_RUN_NODE) != (r->context.flags & TFLAG_RUN_NODE)) {
         raise_error("runnode mismatch");
@@ -407,9 +410,9 @@ void _t_replace_node(T *t,T *r) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeSwap
  */
-T *_t_swap(T *t,int i,T *r) {
+TreeNode *_t_swap(TreeNode *t,int i,TreeNode *r) {
     root_check(r);
-    T *c = _t_child(t,i);
+    TreeNode *c = _t_child(t,i);
     if (!c) {raise_error("tree doesn't have child %d",i);}
     t->structure.children[i-1] = r;
     r->structure.parent = t;
@@ -427,11 +430,11 @@ T *_t_swap(T *t,int i,T *r) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeInsertAt
  */
-void _t_insert_at(T *t, int *path, T *i) {
-    T *c = _t_get(t,path);
+void _t_insert_at(TreeNode *t, int *path, TreeNode *i) {
+    TreeNode *c = _t_get(t,path);
     int d = _t_path_depth(path)-1;
     if (c) {
-        T *p = _t_parent(c);
+        TreeNode *p = _t_parent(c);
         if (!p) {
             raise_error("Can't insert into the root!");
         }
@@ -443,7 +446,7 @@ void _t_insert_at(T *t, int *path, T *i) {
         // then shift the other children over
         int j,l = _t_children(p);
         j = l - path[d];
-        T **tp = &p->structure.children[l-1];
+        TreeNode **tp = &p->structure.children[l-1];
         while(j--) {
             *tp = *(tp-1);
             tp--;
@@ -457,7 +460,7 @@ void _t_insert_at(T *t, int *path, T *i) {
             path[d]--;
             c = _t_get(t,path);
             if (c) {
-                T *p = _t_parent(c);
+                TreeNode *p = _t_parent(c);
                 if (!p) {
                     raise_error("Can't insert into the root!");
                 }
@@ -476,7 +479,7 @@ void _t_insert_at(T *t, int *path, T *i) {
 
 /*****************  Node deletion */
 
-void __t_free_children(T *t) {
+void __t_free_children(TreeNode *t) {
     int c = t->structure.child_count;
     if (c > 0) {
         while(--c>=0) {
@@ -488,7 +491,7 @@ void __t_free_children(T *t) {
 }
 
 // free everything except the node itself
-void __t_free(T *t) {
+void __t_free(TreeNode *t) {
     __t_free_children(t);
     if (!(t->context.flags & TFLAG_REFERENCE)) {
         if (t->context.flags & TFLAG_ALLOCATED)
@@ -497,7 +500,7 @@ void __t_free(T *t) {
             if (t->context.flags & TFLAG_SURFACE_IS_RECEPTOR)
                 _r_free((Receptor *)t->contents.surface);
             else
-                _t_free((T *)t->contents.surface);
+                _t_free((TreeNode *)t->contents.surface);
         }
         else if (t->context.flags & TFLAG_SURFACE_IS_SCAPE)
             _s_free((Scape *)t->contents.surface);
@@ -515,13 +518,13 @@ void __t_free(T *t) {
  * @param[in] t tree to be freed
  * @todo make this remove the child from the parent's child-list?
  */
-void _t_free(T *t) {
+void _t_free(TreeNode *t) {
     __t_free(t);
     free(t);
 }
 
-T *__t_clone(T *t,T *p) {
-    T *nt;
+TreeNode *__t_clone(TreeNode *t,TreeNode *p) {
+    TreeNode *nt;
     uint32_t flags = t->context.flags;
 
     // if the tree points to a type that has an allocated c structure as its surface
@@ -531,10 +534,10 @@ T *__t_clone(T *t,T *p) {
         nt->context.flags |= TFLAG_REFERENCE;
     }
     else if (flags & TFLAG_SURFACE_IS_TREE) {
-        nt = _t_newt(p,_t_symbol(t),__t_clone((T *)_t_surface(t),0));
+        nt = _t_new_tree(p,_t_symbol(t),__t_clone((TreeNode *)_t_surface(t),0));
     }
     else if(_t_size(t) == 0)
-        nt = _t_newr(p,_t_symbol(t));
+        nt = _t_new_node(p,_t_symbol(t));
     else
         nt = _t_new(p,_t_symbol(t),_t_surface(t),_t_size(t));
     DO_KIDS(t,__t_clone(_t_child(t,i),nt));
@@ -543,8 +546,8 @@ T *__t_clone(T *t,T *p) {
     return nt;
 }
 
-T *__t_rclone(T *t,T *p) {
-    T *nt;
+TreeNode *__t_rclone(TreeNode *t,TreeNode *p) {
+    TreeNode *nt;
     uint32_t flags = t->context.flags;
     if (flags & TFLAG_SURFACE_IS_RECEPTOR) {
         raise_error("can't rclone receptors");
@@ -556,13 +559,13 @@ T *__t_rclone(T *t,T *p) {
         nt->context.flags |= TFLAG_REFERENCE;
     }
     else if (flags & TFLAG_SURFACE_IS_TREE) {
-        nt = _t_newt(p,_t_symbol(t),__t_rclone((T *)_t_surface(t),0));
+        nt = _t_new_tree(p,_t_symbol(t),__t_rclone((TreeNode *)_t_surface(t),0));
     }
     else if(_t_size(t) == 0)
         nt = __t_new(p,_t_symbol(t),0,0,1);
     else
         nt = __t_new(p,_t_symbol(t),_t_surface(t),_t_size(t),1);
-    ((rT *)nt)->cur_child =  RUN_TREE_NOT_EVAULATED;
+    ((RunTree *)nt)->cur_child =  RUN_TREE_NOT_EVAULATED;
     DO_KIDS(t,__t_rclone(_t_child(t,i),nt));
     return nt;
 }
@@ -571,22 +574,22 @@ T *__t_rclone(T *t,T *p) {
  * make a copy of a tree
  *
  * @param[in] t tree to clone
- * @returns T duplicated tree
+ * @returns TreeNode duplicated tree
  *
  * @note all receptor/scape/stream trees are cloned as references
  *
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeClone
  */
-T *_t_clone(T *t) {
+TreeNode *_t_clone(TreeNode *t) {
     return __t_clone(t,0);
 }
 
-T *_t_rclone(T *t) {
+TreeNode *_t_rclone(TreeNode *t) {
     return __t_rclone(t,0);
 }
 
-SemanticID _getBuildType(SemTable *sem,SemanticID param,Structure *stP,T **defP) {
+SemanticID _getBuildType(SemTable *sem,SemanticID param,Structure *stP,TreeNode **defP) {
     if (is_process(param)) {
         *defP = _sem_get_def(sem,param);
         return PROCESS_SIGNATURE;
@@ -601,8 +604,8 @@ SemanticID _getBuildType(SemTable *sem,SemanticID param,Structure *stP,T **defP)
         *defP = NULL;
         return st;
     }
-    T *st_def = _sem_get_def(sem,st);
-    T *def = _t_child(st_def,2);
+    TreeNode *st_def = _sem_get_def(sem,st);
+    TreeNode *def = _t_child(st_def,2);
     *defP = def;
     Symbol stsym = _t_symbol(def);
     return stsym;
@@ -624,15 +627,15 @@ enum buildStates {bReadSymbol,bPop,bAddRoot,bReadBase};
  *
  * @note this function doesn't validate that built tree follows the restrictions in the definitions it just uses the definitions to know what to expect in the varargs.  Thus if you put the wrong things in the varargs it will likely segfault!  Also you can build illegal trees.  It would be possible to add an expectations layer that would see if what comes next looks ok according to what's expected as specified in the definitions.  It would also be possible to run the built tree against the semtrex produced by _d_build_def_semtrex
  */
-T *_t_build(SemTable *sem,T *parent,...) {
+TreeNode *_t_build(SemTable *sem,TreeNode *parent,...) {
     va_list ap;
     va_start (ap, parent);
     Symbol param,type;
-    T *t = parent;
+    TreeNode *t = parent;
     bool done = false;
     Structure st = NULL_STRUCTURE;
     char *stn;
-    T *def,*p;
+    TreeNode *def,*p;
     int state = bReadSymbol;
     //    Symbol expecting[100];
     //    T* expecting_def[100];
@@ -659,7 +662,7 @@ T *_t_build(SemTable *sem,T *parent,...) {
             }
             else if (semeq(type,NULL_STRUCTURE)) {
                 // null structure literal so just add it and pop
-                _t_newr(t,param);
+                _t_new_node(t,param);
                 state = bPop;
             }
             else if (semeq(type,STRUCTURE_OR)) {
@@ -677,7 +680,7 @@ T *_t_build(SemTable *sem,T *parent,...) {
             // these are all the system defined structures
             debug(D_TREE,"building sys structure %s\n",_sem_get_name(sem,st));
             if (semeq(st,PROCESS) || semeq(st,SYMBOL) || semeq(st,STRUCTURE) || semeq(st,PROTOCOL)) {
-                t = _t_news(t,param,va_arg(ap,SemanticID));
+                t = _t_new_sym(t,param,va_arg(ap,SemanticID));
                 // execption for SEMTREX_GROUP which has children...
                 if (semeq(param,SEMTREX_GROUP)) {
                     state = bReadSymbol;
@@ -685,14 +688,14 @@ T *_t_build(SemTable *sem,T *parent,...) {
                 }
             }
             else if (semeq(st,INTEGER) || semeq(st,BIT)) {
-                t = _t_newi(t,param,va_arg(ap,int));
+                t = _t_new_int(t,param,va_arg(ap,int));
             }
             else if (semeq(st,CSTRING)) {
-                t = _t_new_str(t,param,va_arg(ap,char *));
+                t = _t_new_string(t,param,va_arg(ap,char *));
             }
             else if (semeq(st,CHAR)) {
                 int i = va_arg(ap,int);
-                t = _t_newc(t,param,i);
+                t = _t_new_char(t,param,i);
             }
             else if (semeq(st,FLOAT)) {
                 double d = va_arg(ap,double); // because vararg floats get promoted to doubles
@@ -741,7 +744,7 @@ T *_t_build(SemTable *sem,T *parent,...) {
             break;
         case bAddRoot:
             debug(D_TREE,"adding node %s\n",_sem_get_name(sem,param));
-            t  = _t_newr(t,param);
+            t  = _t_new_node(t,param);
             state = bReadSymbol;
             break;
         }
@@ -760,15 +763,15 @@ T *_t_build(SemTable *sem,T *parent,...) {
  *
  * @note this function doesn't validate that built tree follows the restrictions in the definitions it just uses the definitions to know what to expect in the varargs.  Thus if you put the wrong things in the varargs it will likely segfault!  Also you can build illegal trees.  It would be possible to add an expectations layer that would see if what comes next looks ok according to what's expected as specified in the definitions.  It would also be possible to run the built tree against the semtrex produced by _d_build_def_semtrex
  */
-T *_t_build2(SemTable *sem,T *parent,...) {
+TreeNode *_t_build2(SemTable *sem,TreeNode *parent,...) {
     va_list ap;
     va_start (ap, parent);
     Symbol param,type,node;
-    T *t = parent;
+    TreeNode *t = parent;
     bool done = false;
     Structure st = NULL_STRUCTURE;
     char *stn;
-    T *def;
+    TreeNode *def;
     while(!done) {
         param = va_arg(ap,Symbol);
         if (semeq(param,STX_OP)) {
@@ -778,17 +781,17 @@ T *_t_build2(SemTable *sem,T *parent,...) {
             if (semeq(type,STRUCTURE_SYMBOL) && semeq(*(Symbol *)_t_surface(def),NULL_SYMBOL)) {
                 debug(D_TREE,"building sys structure %s\n",_sem_get_name(sem,st));
                 if (semeq(st,PROCESS) || semeq(st,SYMBOL) || semeq(st,STRUCTURE) || semeq(st,PROTOCOL)) {
-                    t = _t_news(t,node,va_arg(ap,SemanticID));
+                    t = _t_new_sym(t,node,va_arg(ap,SemanticID));
                 }
                 else if (semeq(st,INTEGER) || semeq(st,BIT)) {
-                    t = _t_newi(t,node,va_arg(ap,int));
+                    t = _t_new_int(t,node,va_arg(ap,int));
                 }
                 else if (semeq(st,CSTRING)) {
-                    t = _t_new_str(t,node,va_arg(ap,char *));
+                    t = _t_new_string(t,node,va_arg(ap,char *));
                 }
                 else if (semeq(st,CHAR)) {
                     int x = va_arg(ap,int);
-                    t = _t_newc(t,node,x);
+                    t = _t_new_char(t,node,x);
                 }
                 else if (semeq(st,TREE_PATH)) {
                     int path[100];
@@ -804,11 +807,11 @@ T *_t_build2(SemTable *sem,T *parent,...) {
                 }
             }
             else {
-                t = _t_newr(t,node);
+                t = _t_new_node(t,node);
             }
         }
         else if (semeq(param,STX_CP)) {
-            T *p = _t_parent(t);
+            TreeNode *p = _t_parent(t);
             if (p == parent) {done = true;break;}
             t = p;
         }
@@ -821,23 +824,23 @@ T *_t_build2(SemTable *sem,T *parent,...) {
 }
 #define test_buffer_overrun if (i == 999) raise_error("buf overrun\n");
 
-T *__t_tokenize(char *s) {
-    T *t = _t_new_root(P_TOKENS);
+TreeNode *__t_tokenize(char *s) {
+    TreeNode *t = _t_new_root(P_TOKENS);
     char buf[1000];
     while(*s) {
         int c = *s;
         if (isspace(c)) {s++;continue;}
-        if (c == '(') _t_newr(t,P_OP);
-        else if (c == ')') _t_newr(t,P_CP);
-        else if (c == ':') _t_newr(t,P_COLON);
-        else if (c == '%') _t_newr(t,P_INTERPOLATE);
+        if (c == '(') _t_new_node(t,P_OP);
+        else if (c == ')') _t_new_node(t,P_CP);
+        else if (c == ':') _t_new_node(t,P_COLON);
+        else if (c == '%') _t_new_node(t,P_INTERPOLATE);
         else if (c == '\'') {
             c = *++s;
             if (!c) raise_error("expecting char value, got end of string");
             int x = *++s;
             if (!x) raise_error("expecting ', got end of string");
             if (x != '\'') raise_error("expecting ' got %c\n",x);
-            _t_newc(t,P_VAL_C,c);
+            _t_new_char(t,P_VAL_C,c);
         }
         else if (c == '"') {
             int i = 0;
@@ -845,7 +848,7 @@ T *__t_tokenize(char *s) {
             test_buffer_overrun;
             if (!c) raise_error("no closing quote found");
             buf[i]=0;
-            _t_new_str(t,P_VAL_S,buf);
+            _t_new_string(t,P_VAL_S,buf);
         }
         else if (isdigit(c) || c == '.') {
             bool is_float = false;
@@ -859,7 +862,7 @@ T *__t_tokenize(char *s) {
                 float f = atof(buf);
                 _t_new(t,P_VAL_F,&f,sizeof(float));
             }
-            else _t_newi(t,P_VAL_I,atoi(buf));
+            else _t_new_int(t,P_VAL_I,atoi(buf));
             test_buffer_overrun;
             if (c=='.') raise_error("unexpected . in number\n");
             s--;
@@ -891,7 +894,7 @@ T *__t_tokenize(char *s) {
             while((c=buf[i]=*s) && (isalnum(c) || c =='_') && i<999) {i++; s++;}
             test_buffer_overrun;
             buf[i]=0;
-            _t_new_str(t,P_LABEL,buf);
+            _t_new_string(t,P_LABEL,buf);
             s--;
         }
         s++;
@@ -908,16 +911,16 @@ T *__t_tokenize(char *s) {
  * @param[in] ... any substitution tree nodes
  * @returns tree
  */
-T *_t_parse(SemTable *sem,T *parent,char *s,...) {
-    T *tokens = __t_tokenize(s);
-    T *t = parent;
+TreeNode *_t_parse(SemTable *sem,TreeNode *parent,char *s,...) {
+    TreeNode *tokens = __t_tokenize(s);
+    TreeNode *t = parent;
     int idx = 1;
-    T *tok;
+    TreeNode *tok;
     va_list ap;
     va_start (ap, s);
     while ((tok = _t_child(tokens,idx++))) {
         if (semeq(P_INTERPOLATE,_t_symbol(tok))) {
-            _t_add(t,va_arg(ap,T *));
+            _t_add(t,va_arg(ap,TreeNode *));
         }
         // if we are opening a new tree node
         else if (semeq(P_OP,_t_symbol(tok))) {
@@ -931,7 +934,7 @@ T *_t_parse(SemTable *sem,T *parent,char *s,...) {
                 raise_error("unknown semantic id:%s",label);
             }
 
-            T *def;
+            TreeNode *def;
             Structure st;
             Symbol type = NULL_SYMBOL;
 
@@ -954,11 +957,11 @@ T *_t_parse(SemTable *sem,T *parent,char *s,...) {
                     if (!_sem_get_by_label(sem,label,&v)) {
                         raise_error("unknown semantic id:%s",label);
                     }
-                    t = _t_news(t,node,v);
+                    t = _t_new_sym(t,node,v);
                 }
                 else if (semeq(st,INTEGER) || semeq(st,BIT)) {
                     if (!semeq(v,P_VAL_I)) raise_error("expecting a P_VAL_I got %s",_t2s(sem,tok));
-                    t = _t_newi(t,node,*(int *)_t_surface(tok));
+                    t = _t_new_int(t,node,*(int *)_t_surface(tok));
                 }
                 else if (semeq(st,FLOAT)) {
                     if (!semeq(v,P_VAL_F)) raise_error("expecting a P_VAL_F got %s",_t2s(sem,tok));
@@ -966,12 +969,12 @@ T *_t_parse(SemTable *sem,T *parent,char *s,...) {
                 }
                 else if (semeq(st,CSTRING)) {
                     if (!semeq(v,P_VAL_S)) raise_error("expecting a P_VAL_S got %s",_t2s(sem,tok));
-                    t = _t_new_str(t,node,(char *)_t_surface(tok));
+                    t = _t_new_string(t,node,(char *)_t_surface(tok));
                 }
                 else if (semeq(st,CHAR)) {
                     if (!semeq(v,P_VAL_C)) raise_error("expecting a P_VAL_C got %s",_t2s(sem,tok));
                     int x = *(int *)_t_surface(tok);
-                    t = _t_newc(t,node,x);
+                    t = _t_new_char(t,node,x);
                 }
                 else if (semeq(st,TREE_PATH)) {
                     if (!semeq(v,P_VAL_PATH)) raise_error("expecting a P_VAL_PATH got %s",_t2s(sem,tok));
@@ -982,11 +985,11 @@ T *_t_parse(SemTable *sem,T *parent,char *s,...) {
                 }
             }
             else {
-                t = _t_newr(t,node);
+                t = _t_new_node(t,node);
             }
         }
         else if (semeq(P_CP,_t_symbol(tok))) {
-            T *p = _t_parent(t);
+            TreeNode *p = _t_parent(t);
             if (p == parent) {break;}
             t = p;
         }
@@ -1002,18 +1005,18 @@ T *_t_parse(SemTable *sem,T *parent,char *s,...) {
 
 
 // used to resolve a semantic link that links kind to kind.
-T *__t_find_actual(T *sem_map,Symbol actual_kind,T *replacement_kind) {
-    T *result = NULL;
-    T *stx = _t_new_root(SEMTREX_WALK);
-    T *l = _sl(stx,SEMANTIC_LINK);
-    T *seq = _t_newr(l,SEMTREX_SEQUENCE);
-    T *x = _t_newr(seq,SEMTREX_VALUE_LITERAL);
-    T *k = _t_clone(replacement_kind);
+TreeNode *__t_find_actual(TreeNode *sem_map,Symbol actual_kind,TreeNode *replacement_kind) {
+    TreeNode *result = NULL;
+    TreeNode *stx = _t_new_root(SEMTREX_WALK);
+    TreeNode *l = _sl(stx,SEMANTIC_LINK);
+    TreeNode *seq = _t_new_node(l,SEMTREX_SEQUENCE);
+    TreeNode *x = _t_new_node(seq,SEMTREX_VALUE_LITERAL);
+    TreeNode *k = _t_clone(replacement_kind);
     _t_add(x,k);
     x = _sl(seq,REPLACEMENT_VALUE);
-    T *g = _t_news(x,SEMTREX_GROUP,actual_kind);
+    TreeNode *g = _t_new_sym(x,SEMTREX_GROUP,actual_kind);
     x = _sl(g,actual_kind);
-    T *mr;
+    TreeNode *mr;
     debug(D_TREE,"   trying to find a %s in sem_map\n",t2s(replacement_kind));
     if (_t_matchr(stx,sem_map,&mr)) {
         result = _stx_get_matched_node(actual_kind,mr,sem_map,NULL);
@@ -1037,19 +1040,19 @@ T *__t_find_actual(T *sem_map,Symbol actual_kind,T *replacement_kind) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeTemplate
  */
-bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
+bool __t_fill_template(TreeNode *template, TreeNode *sem_map,bool as_run_node) {
     if (!template) return false;
     debug(D_TREE,"filling template:\n%s\n",__t2s(G_sem,template,INDENT));
     debug(D_TREE,"from sem_map:\n%s\n\n",__t2s(G_sem,sem_map,INDENT));
 
     bool is_run_node = (template->context.flags |= TFLAG_RUN_NODE) || as_run_node;
     if (semeq(_t_symbol(template),SLOT)) {
-        T *t = _t_child(template,SlotSemanticRefIdx);
+        TreeNode *t = _t_child(template,SlotSemanticRefIdx);
         Symbol sym = _t_symbol(t);
         Symbol valsym = *(Symbol *)_t_surface(t);
-        T *v = _t_child(template,SlotValueOfIdx);
+        TreeNode *v = _t_child(template,SlotValueOfIdx);
         Symbol valof;
-        T *children = NULL;
+        TreeNode *children = NULL;
         if (v) {
             Symbol vsym = _t_symbol(v);
             if (semeq(vsym,SLOT_IS_VALUE_OF))
@@ -1069,15 +1072,15 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
         // @todo convert this to a hashtable based implementation, probably on the treehash of the semantic ref
         int i,c = _t_children(sem_map);
         for(i=1;i<=c;i++) {
-            T *m = _t_child(sem_map,i);
-            T *ref = _t_child(m,SemanticMapSemanticRefIdx);
+            TreeNode *m = _t_child(sem_map,i);
+            TreeNode *ref = _t_child(m,SemanticMapSemanticRefIdx);
             debug(D_TREE,"(checking to see if sym:%s == _t_symbol(ref):%s\n",_sem_get_name(G_sem,sym),_sem_get_name(G_sem,_t_symbol(ref)));
             debug(D_TREE," and that valsym:%s == _t_surface(ref):%s\n",_sem_get_name(G_sem,valsym),_sem_get_name(G_sem,*(Symbol *)_t_surface(ref)));
             if (semeq(sym,_t_symbol(ref)) && semeq(valsym,*(Symbol *)_t_surface(ref))) {
                 debug(D_TREE," yes!)\n");
                 debug(D_TREE,"with %s\n",t2s(m));
                 TreeNode *replace_node = NULL;
-                T *replacement_value = _t_child(_t_child(m,SemanticMapReplacementValIdx),1);
+                TreeNode *replacement_value = _t_child(_t_child(m,SemanticMapReplacementValIdx),1);
                 if (semeq(sym,GOAL) && !v) { // treat a VALUE_OF slot as a symbol not a process
                     SemanticID p = _t_symbol(replacement_value);
                     if (!is_process(p)) {
@@ -1087,7 +1090,7 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
                         else if (semeq(GOAL,p)) {
                             // if the replacement value is a goal, we need to look for
                             // it's actual process symbol in the map
-                            T *x = __t_find_actual(sem_map,ACTUAL_PROCESS,replacement_value);
+                            TreeNode *x = __t_find_actual(sem_map,ACTUAL_PROCESS,replacement_value);
                             if (!x)
                                 raise_error("unable to find actual for %s",t2s(m));
                             p = *(Process *)_t_surface(x);
@@ -1098,18 +1101,18 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
                     }
                     replace_node = __t_new(0,p,0,0,is_run_node);
                     if (is_run_node)
-                        ((rT *)replace_node)->cur_child = RUN_TREE_NOT_EVAULATED;
+                        ((RunTree *)replace_node)->cur_child = RUN_TREE_NOT_EVAULATED;
                 }
                 else {
                     SemanticID rsid = _t_symbol(replacement_value);
                     debug(D_TREE,"replacement value: %s\n",t2s(replacement_value));
                     // if the replacement value is a kind try to re-resolve from the map
                     if (semeq(rsid,ROLE)) {
-                        T *act_val = __t_find_actual(sem_map,ACTUAL_RECEPTOR,replacement_value);
+                        TreeNode *act_val = __t_find_actual(sem_map,ACTUAL_RECEPTOR,replacement_value);
                         if (act_val) replacement_value = act_val;
                     }
                     else if (semeq(rsid,USAGE)) {
-                        T *act_val = __t_find_actual(sem_map,ACTUAL_SYMBOL,replacement_value);
+                        TreeNode *act_val = __t_find_actual(sem_map,ACTUAL_SYMBOL,replacement_value);
                         if (act_val) replacement_value = act_val;
                     }
                     if (v) {
@@ -1135,7 +1138,7 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
                         TreeNode *temp = NULL;
                         if (semeq(rsid,ACTUAL_SYMBOL)) {
                             Symbol actual_sym = *(Symbol *)_t_surface(replacement_value);
-                            TreeNode *actual = _t_news(0,ACTUAL_SYMBOL,actual_sym);
+                            TreeNode *actual = _t_new_sym(0,ACTUAL_SYMBOL,actual_sym);
                             TreeNode *act_val = __t_find_actual(sem_map,ACTUAL_VALUE,actual);
                             _t_free(actual);
                             if (act_val) {
@@ -1167,7 +1170,7 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
                 }
                 if (replace_node) _t_replace_node(template,replace_node);
                 else {
-                    T *p = _t_parent(template);
+                    TreeNode *p = _t_parent(template);
                     if (!p) raise_error("not expecting a root node!");
                     _t_detach_by_ptr(p,template);
                     _t_free(template);
@@ -1181,7 +1184,7 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
     else {
         int i;
         for(i=1;i<=_t_children(template);i++) {
-            T *t = _t_child(template,i);
+            TreeNode *t = _t_child(template,i);
             // if the fill resulted in deletion we need to decrease the count to not skip a child
             if (_t_fill_template(t,sem_map)) i--;
         }
@@ -1197,7 +1200,7 @@ bool __t_fill_template(T *template, T *sem_map,bool as_run_node) {
  * @param[in] t the node
  * @returns number of children
  */
-int _t_children(T *t) {
+int _t_children(TreeNode *t) {
     return t->structure.child_count;
 }
 
@@ -1207,7 +1210,7 @@ int _t_children(T *t) {
  * @param[in] t the node
  * @returns pointer to node's surface
  */
-void * _t_surface(T *t) {
+void * _t_surface(TreeNode *t) {
     if (t->context.flags & (TFLAG_ALLOCATED|TFLAG_SURFACE_IS_TREE|TFLAG_SURFACE_IS_SCAPE|TFLAG_SURFACE_IS_CPTR))
         return t->contents.surface;
     else
@@ -1220,7 +1223,7 @@ void * _t_surface(T *t) {
  * @param[in] t the node
  * @returns Symbol for the given node
  */
-Symbol _t_symbol(T *t) {
+Symbol _t_symbol(TreeNode *t) {
     return t->contents.symbol;
 }
 
@@ -1230,7 +1233,7 @@ Symbol _t_symbol(T *t) {
  * @param[in] t the node
  * @returns size
  */
-size_t _t_size(T *t) {
+size_t _t_size(TreeNode *t) {
     return t->contents.size;
 }
 
@@ -1254,7 +1257,7 @@ TreeNode *_t_child(TreeNode *node, int idx) {
  * @param[in] t the node
  * @returns parent or NULL if node is root
  */
-T * _t_parent(T *t) {
+TreeNode * _t_parent(TreeNode *t) {
     return t->structure.parent;
 }
 
@@ -1264,8 +1267,8 @@ T * _t_parent(T *t) {
  * @param[in] t the node
  * @returns root node by walking up the parents
  */
-T * _t_root(T *t) {
-    T *p;
+TreeNode * _t_root(TreeNode *t) {
+    TreeNode *p;
     while ((p = _t_parent(t)) != 0) t = p;
     return t;
 }
@@ -1276,10 +1279,10 @@ T * _t_root(T *t) {
  * @param[in] t the node
  * @returns the index of the node
  */
-int _t_node_index(T *t) {
+int _t_node_index(TreeNode *t) {
     int c;
     int i;
-    T *p = _t_parent(t);
+    TreeNode *p = _t_parent(t);
     if (p==0) return 0;
     c = _t_children(p);
     for(i=0;i<c;i++) {
@@ -1298,10 +1301,10 @@ int _t_node_index(T *t) {
  *
  * @todo improve algorithm as this is very expensive if called all the time.
  */
-T * _t_next_sibling(T *t) {
+TreeNode * _t_next_sibling(TreeNode *t) {
     int c;
     int i;
-    T *p = _t_parent(t);
+    TreeNode *p = _t_parent(t);
     if (p==0) return 0;
     c = _t_children(p);
     for(i=0;i<c;i++) {
@@ -1320,8 +1323,8 @@ T * _t_next_sibling(T *t) {
  * @param[in] start_child index of the child at which to start the search
  * @returns the found node or NULL
  */
-T *__t_find(T *t,SemanticID sym,int start_child) {
-    T *p;
+TreeNode *__t_find(TreeNode *t,SemanticID sym,int start_child) {
+    TreeNode *p;
     int i;
     int c = _t_children(t);
     for(i = start_child;i<=c;i++) {
@@ -1376,9 +1379,9 @@ int _t_path_depth(int *p) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreePathGetPath
  */
-int * _t_get_path(T *t) {
+int * _t_get_path(TreeNode *t) {
     if (!t) return NULL;
-    T *n;
+    TreeNode *n;
     // allocate an array to hold the
     int s = sizeof(int)*20; // assume most trees are shallower than 10 nodes to prevent realloc
     int *p = malloc(s);
@@ -1457,12 +1460,12 @@ TreeNode * _t_get(TreeNode *node,int *path) {
  * @param[in] t the tree to search
  * @returns pointer to a T
  *
- * note: the last argument MUST be TREE_PATH_TERMINATOR
+ * note: the last argument MUSTreeNode be TREE_PATH_TERMINATOR
  *
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreePathGet
  */
-T * _t_getv(T *t,...) {
+TreeNode * _t_getv(TreeNode *t,...) {
     int p[100];
     va_list ap;
     va_start (ap, t);
@@ -1484,8 +1487,8 @@ T * _t_getv(T *t,...) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreePathGetSurface
  */
-void * _t_get_surface(T *t,int *p) {
-    T *c = _t_get(t,p);
+void * _t_get_surface(TreeNode *t,int *p) {
+    TreeNode *c = _t_get(t,p);
     if (c == NULL) return NULL;
     return _t_surface(c);
 }
@@ -1535,7 +1538,7 @@ char * _t_sprint_path(int *fp,char *buf) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreePathWalk
  */
-T *_t_path_walk(T *t,int **pathP,int *lenP ) {
+TreeNode *_t_path_walk(TreeNode *t,int **pathP,int *lenP ) {
     int *p,i;
 
     if (*pathP == NULL) {
@@ -1562,7 +1565,7 @@ T *_t_path_walk(T *t,int **pathP,int *lenP ) {
         // @todo how to signal this as an error?
         if (d == 0) return NULL;
 
-        T *x = _t_get(t,p);
+        TreeNode *x = _t_get(t,p);
         // the next node is always either the left descend of the current node's next sibling, or
         // if it has no next sibling, then the parent
         int cur_idx = p[d-1];
@@ -1606,7 +1609,7 @@ T *_t_path_walk(T *t,int **pathP,int *lenP ) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeHash
  */
-TreeHash _t_hash(SemTable *sem,T *t) {
+TreeHash _t_hash(SemTable *sem,TreeNode *t) {
     int i,c = _t_children(t);
     TreeHash result;
     if (c == 0) {
@@ -1679,7 +1682,7 @@ int __uuid_equal(UUIDt *u1,UUIDt *u2) {
  * @todo compact is really a shorthand for whether this is a fixed size tree or not
  * this should actually be determined on the fly by looking at the structure types.
  */
-size_t __t_serialize(SemTable *sem,T *t,void **bufferP,size_t offset,size_t current_size,int compact){
+size_t __t_serialize(SemTable *sem,TreeNode *t,void **bufferP,size_t offset,size_t current_size,int compact){
     size_t cl =0,l = _t_size(t);
     int i, c = _t_children(t);
 
@@ -1716,7 +1719,7 @@ size_t __t_serialize(SemTable *sem,T *t,void **bufferP,size_t offset,size_t curr
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeSerialize
  */
-void _t_serialize(SemTable *sem,T *t,void **surfaceP,size_t *lengthP) {
+void _t_serialize(SemTable *sem,TreeNode *t,void **surfaceP,size_t *lengthP) {
     size_t buf_size = 1000;
     *surfaceP = malloc(buf_size);
     *lengthP = __t_serialize(sem,t,surfaceP,0,buf_size,0);
@@ -1728,7 +1731,7 @@ void _t_serialize(SemTable *sem,T *t,void **surfaceP,size_t *lengthP) {
 /// macro to read typed date from the surface and update length and surface values (assumes variable has already been declared)
 #define _SREAD(type,var_name) var_name = *(type *)*surfaceP;*lengthP -= sizeof(type);*surfaceP += sizeof(type);
 
-T * _t_unserialize(SemTable *sem,void **surfaceP,size_t *lengthP,T *t) {
+TreeNode * _t_unserialize(SemTable *sem,void **surfaceP,size_t *lengthP,TreeNode *t) {
     size_t size;
 
     SREAD(Symbol,s);
@@ -1746,14 +1749,14 @@ T * _t_unserialize(SemTable *sem,void **surfaceP,size_t *lengthP,T *t) {
     if (size > 0) {
         //    printf(" reading: %ld bytes\n",size);
         if (semeq(st,INTEGER))
-            t = _t_newi(t,s,*(int *)*surfaceP);
+            t = _t_new_int(t,s,*(int *)*surfaceP);
         else
             t = _t_new(t,s,*surfaceP,size);
         *lengthP -= size;
         *surfaceP += size;
     }
     else {
-        t = _t_newr(t,s);
+        t = _t_new_node(t,s);
     }
 
     int i;
@@ -1778,7 +1781,7 @@ T * _t_unserialize(SemTable *sem,void **surfaceP,size_t *lengthP,T *t) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeJSON
  */
-char * _t2rawjson(SemTable *sem,T *t,int level,char *buf) {
+char * _t2rawjson(SemTable *sem,TreeNode *t,int level,char *buf) {
     char *result = buf;
     if (!t) return "";
     Symbol s = _t_symbol(t);
@@ -1850,7 +1853,7 @@ char * _t2rawjson(SemTable *sem,T *t,int level,char *buf) {
                 break;
             case TREE_ID:
                 if (t->context.flags & TFLAG_SURFACE_IS_TREE) {
-                    c = _t2rawjson(sem,(T *)_t_surface(t),0,tbuf);
+                    c = _t2rawjson(sem,(TreeNode *)_t_surface(t),0,tbuf);
                     sprintf(buf,",\"surface\":%s",c);
                     break;
                 }
@@ -1905,7 +1908,7 @@ char * _t2rawjson(SemTable *sem,T *t,int level,char *buf) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/tree_spec.h testTreeJSON
  */
-char * _t2json(SemTable *sem,T *t,int level,char *buf) {
+char * _t2json(SemTable *sem,TreeNode *t,int level,char *buf) {
     char *result = buf;
     if (!t) return "";
     Symbol s = _t_symbol(t);
@@ -1993,7 +1996,7 @@ char * _t2json(SemTable *sem,T *t,int level,char *buf) {
                 break;
             case TREE_ID:
                 if (t->context.flags & TFLAG_SURFACE_IS_TREE) {
-                    c = _t2json(sem,(T *)_t_surface(t),0,tbuf);
+                    c = _t2json(sem,(TreeNode *)_t_surface(t),0,tbuf);
                     sprintf(buf,"\"type\":\"TREE\",\"name\":\"%s\",\"surface\":%s",n,c);
                     break;
                 }
@@ -2012,7 +2015,7 @@ char * _t2json(SemTable *sem,T *t,int level,char *buf) {
                 }
             default:
                 if (semeq(s,SEMTREX_MATCH_CURSOR)) {
-                    c = _t2json(sem,*(T **)_t_surface(t),0,tbuf);
+                    c = _t2json(sem,*(TreeNode **)_t_surface(t),0,tbuf);
                     //c = "null";
                     sprintf(buf,"(%s:{%s}",n,c);
                     break;
@@ -2045,7 +2048,7 @@ char * _t2json(SemTable *sem,T *t,int level,char *buf) {
 }
 
 // assumes that t is a CSTRING structured tree
-int __t_writeln(T *t,Stream *stream) {
+int __t_writeln(TreeNode *t,Stream *stream) {
     int err = 0;
     char *str = _t_surface(t);
     return _st_writeln(stream,str);
@@ -2059,7 +2062,7 @@ int __t_writeln(T *t,Stream *stream) {
  * @param[in] stream the stream to write to
  * @returns unix error code, or number of bytes written
  */
-int _t_write(SemTable *sem,T *t,Stream *stream) {
+int _t_write(SemTable *sem,TreeNode *t,Stream *stream) {
     int err;
     Symbol sym = _t_symbol(t);
     if (semeq(sym,LINE)) {

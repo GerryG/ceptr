@@ -9,8 +9,6 @@
  */
 
 #include "ceptr.h"
-/******************  create and destroy virtual machine */
-
 
 /* 
  * allocates and initializes vm from a table with base definitions loaded
@@ -18,11 +16,11 @@
  * creates the root (system) receptor
  * creates a single namespace (scape) mapping receptor idetifiers to surfaces
  */
-VMHost *__v_init(SemTable *table) {
+VMHost *__v_init(Receptor *ceptr, SemTable *table) {
     VMHost *vm = malloc(sizeof(VMHost));
     memset(vm,0,sizeof(VMHost));
 
-    vm->ceptr = _r_new(table, SYS_RECEPTOR)
+    vm->ceptr = ceptr;
     vm->sem = table;
     vm->installed_receptors = _s_new(RECEPTOR_IDENTIFIER,RECEPTOR_SURFACE);
 
@@ -45,8 +43,10 @@ VMHost *__v_init(SemTable *table) {
  * @snippet spec/vmhost_spec.h testVMHostCreate
  */
 VMHost * _v_new() {
-    VMHost *vm = __v_init(_base_sem_table()); // init vm with base defs
-    load_system(vm) // load system definitions (sys_defs)
+    // init vm with system receptor and base defs
+    SemTable *table = _base_sem_table();
+    VMHost *vm = __v_init(_r_new(table, SYS_RECEPTOR), table);
+    load_system(vm); // load system definitions (sys_defs)
     return vm;
 }
 
@@ -66,8 +66,8 @@ void _v_free(VMHost *v) {
 /*
  * add a receptor from definition (surface?)
  */
-Xaddr _v_add_receptor(VMHost *vm, Receptory parent, TreeNode ceptr_def) {
-  _v_new_receptor(vm, parent, ceptr_def, _r_new(vm->sem, ceptr_def));
+Xaddr _v_add_receptor(VMHost *vm, Receptor *parent, SemanticID ceptr_def) {
+  _v_register_ceptr(vm, parent, ceptr_def, _r_new(vm->sem, ceptr_def));
 }
 
 /**
@@ -103,14 +103,14 @@ Xaddr _v_load_receptor_package(VMHost *vm,TreeNode *ceptr_package) {
  *
  * monifest should validate (names ? no) V should have S structure
  */
-Xaddr _v_install_ceptr(VMHost *vm, Xaddr package, Treenode *bindings, char *label) {
+Xaddr _v_install_ceptr(VMHost *vm, Xaddr package, TreeNode *bindings, char *label) {
     raise_error("not implemented");
     TreeNode *pkgtree; // = _r_get_instance(vm->ceptr, package);
     TreeNode *id = _t_child(pkgtree, 2);
     TreeHash key = _t_hash(vm->ceptr->sem, id); // hash type id?
 
     // make sure we aren't re-installing an already installed receptor
-    Xaddr x = _s_get(vm->installed_receptors,h);
+    Xaddr x = _s_get(vm->installed_receptors, key);
     if (!(is_null_xaddr(x))) return G_null_xaddr;
     _s_add(vm->installed_receptors, key, package);
 
@@ -118,7 +118,7 @@ Xaddr _v_install_ceptr(VMHost *vm, Xaddr package, Treenode *bindings, char *labe
     // @todo expand the manifest to allow optional binding, etc, using
     // semtrex to do the matching instead of assuming positional matching
     if (bindings) {
-        TreeNode *manifest = _t_child(pkgtree,1);
+        TreeNode *manifest = _t_child(pkgtree, 1);
         int mani_cnt = _t_children(manifest);
         // WTF, is this a list of pairs or even numbered list (flattened)?
         if (mani_cnt % 2) {raise_error("manifest must have even number of children!");}
@@ -129,13 +129,15 @@ Xaddr _v_install_ceptr(VMHost *vm, Xaddr package, Treenode *bindings, char *labe
             //TreeNode *surface = _t_child(manifest_ptr, i+1); // if flattened
             TreeNode *binding_ptr = _t_child(bindings, i);
             if (!binding_ptr) {
-                raise_error("missing binding for %s",(char *)_t_surface(_t_child(manifest_ptr,1)));
+                raise_error("missing binding for %s", (char *)_t_surface(_t_child(manifest_ptr,1)));
             }
-            TreeNode *bind_value = _t_child(binding_ptr,2);
+            TreeNode *bind_value = _t_child(binding_ptr, 2);
             Symbol spec = *(Symbol *)_t_surface(surface); // list of symbols (child types)
-            if (semeq(_t_symbol(bind_value),spec)) {
-                T *symbols = _t_child(pkgtree,3);
-                raise_error("bindings symbol %s doesn't match spec %s",_sem_get_name(vm->ceptr->sem,_t_symbol(bind_value)),_sem_get_name(vm->ceptr->sem,spec));
+            if (semeq(_t_symbol(bind_value), spec)) {
+                T *symbols = _t_child(pkgtree, 3);
+                raise_error("bindings symbol %s doesn't match spec %s",
+                  _sem_get_name(vm->ceptr->sem, _t_symbol(bind_value)),
+                  _sem_get_name(vm->ceptr->sem, spec));
             }
         }
     }
@@ -144,20 +146,20 @@ Xaddr _v_install_ceptr(VMHost *vm, Xaddr package, Treenode *bindings, char *labe
 
     raise_error("fix semtable");
     Receptor *ceptr = _r_new_receptor_from_package(NULL, symbol, pkgtree, bindings);
-    return _v_new_receptor(vm, vm->ceptr, symbol, ceptr);
+    return _v_register_ceptr(vm, vm->ceptr, symbol, ceptr);
 }
 
-Xaddr _v_new_receptor(VMHost *vm,Receptor *parent,Symbol name, Receptor *parent) {
-    TreeNode *ceptr = _t_new_receptor(NULL,name,parent);
+Xaddr _v_register_ceptr(VMHost *vm, Receptor *parent, Symbol sym, Receptor *new_ceptr) {
+    TreeNode *ceptr = _t_new_receptor(NULL, sym, new_ceptr);
     if (vm->receptor_count > MAX_RECEPTORS) { raise_error("too many receptors"); }
     int next_idx = vm->receptor_count++;
-    vm->routing_table[next_idx].r=parent;
-    vm->routing_table[next_idx].s=name;
-    parent->addr.addr = next_idx;
+    vm->routing_table[next_idx].r=new_ceptr;
+    vm->routing_table[next_idx].s=sym;
+    new_ceptr->addr.addr = next_idx;
 
     //@todo what ever else is needed at the vmhost level to add the receptor's
     // process queue to the process tables etc...
-    return _r_new_instance(parent,ceptr);
+    return _r_new_instance(parent, ceptr);
 }
 
 /**
@@ -167,19 +169,18 @@ Xaddr _v_new_receptor(VMHost *vm,Receptor *parent,Symbol name, Receptor *parent)
  * @param[in] x Xaddr of receptor to activate
  *
  */
-void _v_activate(VMHost *v, Xaddr x) {
-    if (v->active_receptor_count+1 >= MAX_ACTIVE_RECEPTORS) {
+void _v_activate(VMHost *vm, Xaddr xaddr) {
+    if (vm->active_receptor_count > MAX_ACTIVE_RECEPTORS) {
         raise_error("too many active receptors");
     }
-    T *t = _r_get_instance(v->ceptr,x);
-    Receptor *r = __r_get_receptor(t);
-    int c = v->active_receptor_count++;
-    v->active_receptors[c].r=r;
-    v->active_receptors[c].x=x;
+    Receptor *ceptr = _r_get_receptor_instance(vm->ceptr, xaddr);
+    int c = vm->active_receptor_count++;
+    vm->active_receptors[c].r=ceptr;
+    vm->active_receptors[c].x=xaddr;
 
     // handle special cases
-    if (semeq(x.symbol,CLOCK_RECEPTOR)) {
-        _v_start_thread(&v->clock_thread,___clock_thread,r);
+    if (semeq(xaddr.symbol,CLOCK_RECEPTOR)) {
+        _v_start_thread(&vm->clock_thread,___clock_thread,ceptr);
     }
 }
 
@@ -321,7 +322,7 @@ void _v_start_vmhost(VMHost *v) {
  */
 void _v_instantiate_builtins(VMHost *v) {
     Receptor *r = _r_makeClockReceptor(v->sem);
-    Xaddr clock = _v_new_receptor(v,v->ceptr,CLOCK_RECEPTOR,r);
+    Xaddr clock = _v_register_ceptr(v,v->ceptr,CLOCK_RECEPTOR,r);
     _v_activate(v,clock);
 }
 

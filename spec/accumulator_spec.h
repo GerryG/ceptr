@@ -94,7 +94,7 @@ void testAccInstances() {
     _a_set_instance(&i,x,t);
     spec_is_ptr_equal(t,_a_get_instance(&i,x));
 
-    t = _t_new_str(0,TEST_STR_SYMBOL,"fish");
+    t = _t_new_string(0,TEST_STR_SYMBOL,"fish");
     x = _a_new_instance(&i,t);
 
     t = _t_newi(0,TEST_INT_SYMBOL,3);
