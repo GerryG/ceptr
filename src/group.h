@@ -12,7 +12,7 @@
 #ifndef _CEPTR_GROUP_H
 #define _CEPTR_GROUP_H
 
-#include "accumulator.h"
+#include "ceptr.h"
 
 Receptor *makeGroup(VMHost *v,char *label);
 

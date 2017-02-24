@@ -13,8 +13,6 @@
 #ifndef _CEPTR_VMHOST_H
 #define _CEPTR_VMHOST_H
 
-#include "receptor.h"
-
 #define SELF_RECEPTOR_ADDR -1
 
 typedef struct thread {
@@ -37,10 +35,10 @@ typedef struct ReceptorRoute {
 /**
  * VMHost holds all the data for an active virtual machine host
  */
-struct VMHost {
+typedef struct VMHost {
     ReceptorRoute routing_table[MAX_RECEPTORS];
     int receptor_count;
-    Receptor *r;                ///< Receptor data for this vm host
+    Receptor *ceptr;                ///< Receptor data for this vm host
     SemTable *sem;              ///< Semantic Table for definitions on this host
     ActiveReceptor active_receptors[MAX_ACTIVE_RECEPTORS];       ///< pointer to array that holds all currently active receptors
     int active_receptor_count;
@@ -49,8 +47,8 @@ struct VMHost {
     thread clock_thread;
     int process_state;
     char *dir;
-};
-typedef struct VMHost VMHost;
+} VMHost;
+// not one char elements: r -> ceptr, c? missing -> ceptr
 
 /******************  create and destroy virtual machine */
 VMHost *__v_init(Receptor *r,SemTable *sem);
@@ -59,7 +57,7 @@ void _v_free(VMHost *r);
 
 Xaddr _v_load_receptor_package(VMHost *v,T *p);
 Xaddr _v_install_r(VMHost *v,Xaddr package,T *bindings,char *label);
-Xaddr _v_new_receptor(VMHost *v,Receptor *parent,Symbol s, Receptor *r);
+Xaddr _v_register_ceptr(VMHost *v,Receptor *parent,Symbol s, Receptor *r);
 void _v_activate(VMHost *v, Xaddr x);
 void _v_send(VMHost *v,ReceptorAddress from,ReceptorAddress to,Aspect aspect,Symbol carrier,T *contents);
 void _v_send_signals(VMHost *v,T *signals);

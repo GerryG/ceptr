@@ -11,10 +11,18 @@
 #
 # <Directive> =
 #
+# Context  --   Sets the context to name (SYS, 2, 3 ?)
 # Context: <name>;
+#
+# Symbol   --   Defines a symbol is an Enum, give these string names that map onto
+#               Smartname simple-names
+# (How or two forms different?)
 # Symbol: <symbol-label>,<structure>;                
 # or
 # Symbol: <symbol-label>,'['<structure-def>']';
+#
+# Structure -- Defines a 'type', each tree node has a type symbol by saying what
+#              the strucure of the node is, value or children structures (types?)
 #
 # Structure: <symbol-label>,<structure-def>;
 #
@@ -36,12 +44,27 @@
 # %x     -> (STRUCTURE_STRUCTURE:x)
 # !      -> (STRUCTURE_ANYTHING)
 #
+# Can't we just use the data representation of a LISP derived list syntax?
 # Data: <data-label>,<lispy encoded tree>;
 # GlobalData: <data-label>, <lispy encoded tree>;
+#
+# Process -- These are go now?
+#            How is a ProcessL different?
+#
 # Process: <process-label>,<code-tree>,<label>,<result-label>,<output-signature-type>,<output-signature-sub-type>,[<input-signature-type>,<input-signature-sub-type>].,0;
 # ProcessL: <process-label>,<code-tree>,<label>,<linked-to>,<link-type>,<result-label>,<output-signature-type>,<output-signature-sub-type>,[<input-signature-type>,<input-signature-sub-type>].,0;
+#
+# Label -- Oh, I think I want to only used the strings except (maybe) for internal
+#          objects in the VM dataspace.
 # Label: <semantic-id-to-label>,<label-type>,<string>;
+#
+# Protocol -- ???? what are these?
+#
 # Protocol: <protocol-label>,<data>;
+#
+# Declare -- ??
+#
+# Declare: ??
 
 Context: SYS;
 

@@ -8,12 +8,17 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "semtable.h"
-#include "def.h"
+#include "ceptr.h"
 
-SemTable *_sem_new() {
-    SemTable * sem= malloc(sizeof(SemTable));
-    memset(sem,0,sizeof(SemTable));
+/*
+ * allocates a new sem table and poplulates it with base definitions
+ */
+SemTable *_base_sem_table() {
+    SemTable *table= malloc(sizeof(SemTable));
+    memset(table,0,sizeof(SemTable));
+
+    base_contexts(table);
+    base_defs(table);
 }
 
 int _sem_new_context(SemTable *sem,T *definitions) {
@@ -82,10 +87,10 @@ T *__sem_get_def(SemTable *sem,SemanticType semtype,Context c,SemanticAddr i) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/semtable_spec.h testSemTableGetName
  */
-char *_sem_get_name(SemTable *sem,SemanticID s) {
-    if (s.id == 0) {
-        if (s.context == SYS_CONTEXT) {
-            switch (s.semtype) {
+char *_sem_get_name(SemTable *table, SemanticID semid) {
+    if (semid.id == 0) {
+        if (semid.context == SYS_CONTEXT) {
+            switch (semid.semtype) {
             case SEM_TYPE_STRUCTURE: return "NULL_STRUCTURE";
             case SEM_TYPE_SYMBOL: return "NULL_SYMBOL";
             case SEM_TYPE_PROCESS: return "NULL_PROCESS";
@@ -97,15 +102,15 @@ char *_sem_get_name(SemTable *sem,SemanticID s) {
             raise_error("unexpected semantic NULL id!");
         }
     }
-    T *def = _sem_get_def(sem,s);
-    char *n = NULL;
+    TreeNode *def = _sem_get_def(table, semid);
+    char *name = NULL;
     if (def) {
-        int path[] ={DefLabelIdx,1,TREE_PATH_TERMINATOR};
-        T *t = _t_get(def,path);
-        if (!t) raise_error("missing label!");
-        n = (char *)_t_surface(t);
+        int path[] = {DefLabelIdx,1,TREE_PATH_TERMINATOR};
+        TreeNode *node = _t_get(def, path);
+        if (!node) raise_error("missing label!");
+        name = (char *)_t_surface(node);
     }
-    return n;
+    return name;
 }
 
 /**
@@ -148,7 +153,7 @@ T * _sem_get_label(SemTable *sem,SemanticID s,Symbol label_type) {
 void _sem_add_label(SemTable *sem,SemanticID s,Symbol label_type,char *label) {
     T *def = _sem_get_def(sem,s);
     T *labels  = _t_child(def,DefLabelIdx);
-    _t_new_str(labels,label_type,label);
+    _t_new_string(labels,label_type,label);
 }
 
 Structure _sem_get_symbol_structure(SemTable *sem,Symbol s){

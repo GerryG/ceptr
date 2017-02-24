@@ -8,14 +8,9 @@
  * @copyright Copyright (C) 2013-2014, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "accumulator.h"
-#include "semtrex.h"
-#include "mtree.h"
-#include "receptor.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "debug.h"
-#include "util.h"
+#include "sys_defs.h"
 
 VMHost *G_vm = 0;
 
@@ -133,7 +128,7 @@ void _a_boot(char *dir_path) {
  */
 void _a_shut_down() {
     // cleanly close down any processing in the VM_Host
-    __r_kill(G_vm->r);
+    __r_kill(G_vm->ceptr);
 
     _v_join_thread(&G_vm->clock_thread);
     _v_join_thread(&G_vm->vm_thread);
@@ -152,7 +147,7 @@ void _a_shut_down() {
             free(p);
         }
         else
-            _t_newr(paths,STRUCTURE_ANYTHING); // should be something like DELETED_CONTEXT
+            _t_new_node(paths,STRUCTURE_ANYTHING); // should be something like DELETED_CONTEXT
     }
     __a_serializet(paths,PATHS_FN);
     _t_free(paths);
@@ -160,7 +155,7 @@ void _a_shut_down() {
     // serialize the receptor part of the vmhost
     void *surface;
     size_t length;
-    _r_serialize(G_vm->r,&surface,&length);
+    _r_serialize(G_vm->ceptr,&surface,&length);
     //    _r_unserialize(surface);
     __a_vmfn(fn,G_vm->dir);
     writeFile(fn,surface,length);
@@ -206,11 +201,11 @@ Xaddr _a_new_instance(Instances *instances,T *t) {
     T *x = __a_get_instances(instances);
     if (!x) {
         x = *instances = _t_new_root(INSTANCE_STORE);
-        x = _t_newr(x,INSTANCES);
+        x = _t_new_node(x,INSTANCES);
     }
     Symbol s = _t_symbol(t);
     T *si =  __a_find(x,s);
-    if (!si) si = _t_news(x,SYMBOL_INSTANCES,s);
+    if (!si) si = _t_new_sym(x,SYMBOL_INSTANCES,s);
     _t_add(si,t);
     Xaddr result;
     result.symbol = s;
@@ -282,7 +277,7 @@ S *__a_serialize_instances(Instances *instances) {
         DO_KIDS(x,
                 p =_t_child(x,i);
                 s = *(Symbol *)_t_surface(p);
-                T *sym = _t_news(t,STRUCTURE_SYMBOL,s);  // just using this symbol to store the symbol type
+                T *sym = _t_new_sym(t,STRUCTURE_SYMBOL,s);  // just using this symbol to store the symbol type
                 T *c;
                 DO_KIDS(p,
                         c = _t_child(p,i);
@@ -384,19 +379,19 @@ T *_a_gen_token(Instances *instances,Xaddr x,T *dependency) {
     T *tokens = __a_get_tokens(instances);
     T *c;
     if (!tokens) {
-        tokens = _t_newr(*instances,INSTANCE_TOKENS);
-        c = _t_newi64(tokens,LAST_TOKEN,0);
+        tokens = _t_new_node(*instances,INSTANCE_TOKENS);
+        c = _t_new_int64(tokens,LAST_TOKEN,0);
     }
     else c = _t_child(tokens,InstanceTokensLastTokenIdx);
     // @todo semaphore lock
     uint64_t *l = (uint64_t *)_t_surface(c);
     (*l)++;
-    T *t = _t_newi64(tokens,INSTANCE_TOKEN,*l);
+    T *t = _t_new_int64(tokens,INSTANCE_TOKEN,*l);
     T *result = _t_clone(t);
 
     // cheat and add the token xaddr and dependency as leaves of the last token here in the store
     _t_new(t,TOKEN_XADDR,&x,sizeof(Xaddr));
-    _t_newi(t,DEPENDENCY_HASH,_t_hash(G_sem,dependency));
+    _t_new_int(t,DEPENDENCY_HASH,_t_hash(G_sem,dependency));
 
     return result;
 }
@@ -442,7 +437,7 @@ void _a_add_dependency(Instances *instances,T *token,T *dependency) {
         T *t = __a_find_token(tokens,*(uint64_t *)_t_surface(token));
         if (t) {
             if (!__a_find_dependency(t,dependency))
-                _t_newi(t,DEPENDENCY_HASH,_t_hash(G_sem,dependency));
+                _t_new_int(t,DEPENDENCY_HASH,_t_hash(G_sem,dependency));
             return;
         }
     }

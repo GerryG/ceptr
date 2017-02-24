@@ -22,10 +22,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-
-#include "process.h"
-#include "debug.h"
-#include "util.h"
+#include "ceptr.h"
 
 char *DELIM_LF = "\n";
 char *DELIM_CRLF = "\r\n";

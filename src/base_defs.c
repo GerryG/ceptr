@@ -9,12 +9,7 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "base_defs.h"
 #include "sys_defs.h"
-#include "def.h"
-#include "process.h"
-#include "receptor.h"
-#include "protocol.h"
 
 SemanticID SYS_RECEPTOR={0,0,0};
 SemanticID COMPOSITORY={0,0,0};

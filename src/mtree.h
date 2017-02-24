@@ -14,9 +14,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "ceptr_error.h"
-#include "sys_defs.h"
-#include "ceptr_types.h"
+#include "ceptr.h"
 
 typedef struct MwalkState {
     Mindex i;

@@ -41,8 +41,8 @@ void testProtocolRecognize() {
 
     // which we add to the bindings
     T *bindings = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_PROCESS);
+    T *res = _t_new_node(bindings,RESOLUTION);
+    T *w = _t_new_node(res,WHICH_PROCESS);
     _t_news(w,GOAL,RECOGNITION);
     _t_news(w,ACTUAL_PROCESS,proc);
 
@@ -59,25 +59,25 @@ void testProtocolRecognize() {
     spec_is_str_equal(_td(self,self->flux),"(FLUX (DEFAULT_ASPECT (EXPECTATIONS (EXPECTATION (CARRIER:backnforth) (PATTERN (SEMTREX_SYMBOL_LITERAL (SEMTREX_SYMBOL:are_you))) (ACTION:send_response) (PARAMS) (END_CONDITIONS (UNLIMITED)) (SEMANTIC_MAP (SEMANTIC_LINK (ROLE:REQUESTER) (REPLACEMENT_VALUE (ROLE:RECOGNIZER))) (SEMANTIC_LINK (ROLE:RESPONDER) (REPLACEMENT_VALUE (ROLE:RECOGNIZEE))) (SEMANTIC_LINK (GOAL:RESPONSE_HANDLER) (REPLACEMENT_VALUE (GOAL:RECOGNITION))) (SEMANTIC_LINK (USAGE:REQUEST_TYPE) (REPLACEMENT_VALUE (ACTUAL_SYMBOL:are_you))) (SEMANTIC_LINK (USAGE:RESPONSE_TYPE) (REPLACEMENT_VALUE (ACTUAL_SYMBOL:i_am))) (SEMANTIC_LINK (USAGE:CHANNEL) (REPLACEMENT_VALUE (ACTUAL_SYMBOL:DEFAULT_ASPECT))) (SEMANTIC_LINK (GOAL:REQUEST_HANDLER) (REPLACEMENT_VALUE (ACTUAL_PROCESS:fill_i_am)))))) (SIGNALS)))");
 
     VMHost *v = G_vm;
-    Xaddr x = _v_new_receptor(v,v->r,TEST_RECEPTOR,self);
+    Xaddr x = _v_new_receptor(v,v->ceptr,TEST_RECEPTOR,self);
     _v_activate(v,x);
 
     // now create bindings for the RECONIZEE half of the protocols
     bindings = _t_new_root(PROTOCOL_BINDINGS);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_RECEPTOR);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,RECOGNIZEE);
     __r_make_addr(w,ACTUAL_RECEPTOR,self->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_PROCESS);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_PROCESS);
     _t_news(w,GOAL,RECOGNITION);
     _t_news(w,ACTUAL_PROCESS,NOOP);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_VALUE);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_VALUE);
     _t_news(w,ACTUAL_SYMBOL,are_you);
-    T *val = _t_newr(w,ACTUAL_VALUE);
-    val = _t_newr(val,are_you);
-    _t_newr(val,SEMTREX_WALK);
+    T *val = _t_new_node(w,ACTUAL_VALUE);
+    val = _t_new_node(val,are_you);
+    _t_new_node(val,SEMTREX_WALK);
 
     spec_is_str_equal(t2s(bindings),"(PROTOCOL_BINDINGS (RESOLUTION (WHICH_RECEPTOR (ROLE:RECOGNIZEE) (ACTUAL_RECEPTOR (RECEPTOR_ADDR:3)))) (RESOLUTION (WHICH_PROCESS (GOAL:RECOGNITION) (ACTUAL_PROCESS:NOOP))) (RESOLUTION (WHICH_VALUE (ACTUAL_SYMBOL:are_you) (ACTUAL_VALUE (are_you (SEMTREX_WALK))))))");
 
@@ -124,7 +124,7 @@ void testProtocolRecognize() {
 }
 
 void testProtocolAlive() {
-    SemTable *sem = G_vm->r->sem;
+    SemTable *sem = G_vm->ceptr->sem;
 
     spec_is_str_equal(t2s(_sem_get_def(G_sem,ALIVE)),"(PROTOCOL_DEFINITION (PROTOCOL_LABEL (ENGLISH_LABEL:ALIVE)) (PROTOCOL_SEMANTICS (ROLE:SERVER) (ROLE:CLIENT) (GOAL:HANDLER)) (alive (EXPECT (ROLE:SERVER) (SOURCE (ROLE:CLIENT)) (PATTERN (SEMTREX_SYMBOL_LITERAL (SEMTREX_SYMBOL:PING))) (ACTION:respond_with_yup)) (EXPECT (ROLE:CLIENT) (SOURCE (ROLE:SERVER)) (PATTERN (SEMTREX_SYMBOL_LITERAL (SEMTREX_SYMBOL:YUP))) (SLOT (GOAL:HANDLER) (SLOT_IS_VALUE_OF:ACTION)))))");
 

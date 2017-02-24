@@ -19,13 +19,19 @@
  *
  * <b>Examples (from test suite):</b>
  * @snippet spec/scape_spec.h testScapeNew
+ *
+ * called from vmhost with RECEPTOR_IDENTIFIER, RECEPTOR_SURFACE
+ * that is saying that this is a map from Receptor ids (symbols) to receptor values
+ * presumably receptory surface maps to a representation of the receptor such that
+ * it can act as the identified receptor. The value will be a hash key that can be
+ * used to find actual represetation for use in processing.
  */
 Scape *_s_new(Symbol key_source,Symbol data_source) {
-    Scape *s = malloc(sizeof(Scape));
-    s->key_source = key_source;
-    s->data_source = data_source;
-    s->data = NULL;
-    return s;
+    Scape *new_scape = malloc(sizeof(Scape));
+    new_scape->key_source = key_source;
+    new_scape->data_source = data_source;
+    new_scape->data = NULL;
+    return new_scape;
 }
 
 // free the hash table data
@@ -54,19 +60,17 @@ void _s_free(Scape *s) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/scape_spec.h testScapeAddElement
  */
-void _s_add(Scape *s,TreeHash h,Xaddr x) {
-    ScapeData *data = &s->data;
-    scape_elem *e;
+void _s_add(Scape *scape,TreeHash hash,Xaddr external) {
+    ScapeData *scape_hash = &scape->data;
+    scape_elem *scape_el;
 
-    HASH_FIND_INT( *data, &h, e );
-    if (e) {
-    raise_error("allready there!");
-    }
+    HASH_FIND_INT( *scape_hash, &hash, scape_el );
+    if (scape_el) { raise_error("allready there!"); }
     else {
-    e = malloc(sizeof(struct scape_elem));
-    e->key = h;
-    e->value = x;
-    HASH_ADD_INT(*data,key,e);
+      scape_el = malloc(sizeof(struct scape_elem));
+      scape_el->key = hash;
+      scape_el->value = external;
+      HASH_ADD_INT(*scape_hash, hash, scape_el);
     }
 }
 
@@ -80,14 +84,14 @@ void _s_add(Scape *s,TreeHash h,Xaddr x) {
  * <b>Examples (from test suite):</b>
  * @snippet spec/scape_spec.h testScapeAddElement
  */
-Xaddr _s_get(Scape *s,TreeHash h) {
-    Xaddr x = {0,0};
-    scape_elem *e = 0;
-    ScapeData *data = &s->data;
+Xaddr _s_get(Scape *scape,TreeHash hash_key) {
+    Xaddr external = {0,0};
+    scape_elem *elem = 0;
+    ScapeData *scape_hash = &scape->data;
 
-    HASH_FIND_INT( *data, &h, e );
-    if (e) return e->value;
-    return x;
+    HASH_FIND_INT( *scape_hash, &hash_key, elem );
+    if (elem) return elem->value;
+    return external;
 }
 
 /** @}*/

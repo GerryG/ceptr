@@ -12,10 +12,6 @@
 #ifndef _CEPTR_ACCUMULATOR_H
 #define _CEPTR_ACCUMULATOR_H
 
-#include "tree.h"
-#include "mtree.h"
-#include "vmhost.h"
-
 void _a_boot(char *dir_name);
 void _a_start_vmhost();
 void _a_shut_down();

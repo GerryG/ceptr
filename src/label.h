@@ -12,7 +12,7 @@
 
 #ifndef _CEPTR_LABEL_H
 #define _CEPTR_LABEL_H
-#include "ceptr_types.h"
+#include "sys_defs.h"
 
 Label str2label(char *);
 void labelSet(LabelTable *table, char *,int *path);

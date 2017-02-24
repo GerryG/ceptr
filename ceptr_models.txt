@@ -1,0 +1,34 @@
+
+Data and code is pretty much all semantic trees. The top level objects are more
+or less:
+
+vmhost: the virtual machine, at start up, it create a Scape to register
+        ceptrs.
+
+Scape: is a key value store, The keys may be a signature of the ceptr
+       definition (dna).
+
+In a running ceptr instance, there are a number of singleton tables, the main
+one is the Semantic Table (sem in most code -> table is better for me):
+
+They "keys" here are tye SemanticIDs, which are essentially internalized
+symbols. In theory, the actual symbols (name or codename ala smartname)
+should be kept in the external representations instead of the enums as it
+is. They should also be unique across semantic type, but probably not context.
+This isn't clear.
+
+Doesn't seem like this set is extentable, and probably should be selected
+more syntactically (prefixes? or inflection?)
+
+  SEM_TYPE_STRUCTURE This defines a new TreeNode type that defines the
+                     structure (types and symbols of children or builtin)
+  SEM_TYPE_SYMBOL    This is basically a child label in the semantic trees.
+  SEM_TYPE_PROCESS   I think these are running (active) tree processing
+  SEM_TYPE_RECEPTOR  The ceptr instances
+  SEM_TYPE_PROTOCOL  ?
+
+Contexts: To separate different execution/isonations contexts. Not totally
+clear if there are any mechanisms to enforce these boundaries. Sort of like
+system/user contexts in the OS?
+
+

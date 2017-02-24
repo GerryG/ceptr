@@ -32,7 +32,7 @@ void dump2json(SemTable *sem,T *t,char *n) {
 T *makeDelta(Symbol sym,int *path,T *t,int count) {
     T *d = _t_new_root(sym);
     _t_new(d,TREE_DELTA_PATH,path,sizeof(int)*(_t_path_depth(path)+1));
-    _t_add(_t_newr(d,TREE_DELTA_VALUE),_t_clone(t));
+    _t_add(_t_new_node(d,TREE_DELTA_VALUE),_t_clone(t));
     if (count)
     _t_newi(d,TREE_DELTA_COUNT,count);
     return d;

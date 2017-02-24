@@ -8,15 +8,9 @@
 #define _GNU_SOURCE
 #include <string.h>
 #include <stdio.h>
-
 // #include <pthread.h>
 #include <stdlib.h>
 
+#include "sys_defs.h"
 #include "ceptr_error.h"
-#include "semtable.h"
-#include "tree.h"
-#include "mtree.h"
-#include "stream.h"
-#include "util.h"
-#include "debug.h"
 #endif

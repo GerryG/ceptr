@@ -1,24 +1,35 @@
 #ifndef _CEPTR_TYPES_H
 #define _CEPTR_TYPES_H
 
-#include <stdint.h>
-#include <stdio.h>
-#include "uthash.h"
-#include <stdbool.h>
-
 // NOTE: the actual values of the types matter because they must match the order they show
 // up in the definition trees
-enum SemanticTypes {SEM_TYPE_STRUCTURE=1,SEM_TYPE_SYMBOL,SEM_TYPE_PROCESS,SEM_TYPE_RECEPTOR,SEM_TYPE_PROTOCOL};
-#define is_symbol(s) ((s).semtype == SEM_TYPE_SYMBOL)
-#define is_process(s) ((s).semtype == SEM_TYPE_PROCESS)
-#define is_structure(s) ((s).semtype == SEM_TYPE_STRUCTURE)
-#define is_protocol(s) ((s).semtype == SEM_TYPE_PROTOCOL)
-#define is_receptor(s) ((s).semtype == SEM_TYPE_RECEPTOR)
+enum SemanticTypes {
+  SEM_TYPE_STRUCTURE=1,
+  SEM_TYPE_SYMBOL,
+  SEM_TYPE_PROCESS,
+  SEM_TYPE_RECEPTOR,
+  SEM_TYPE_PROTOCOL
+};
+#define is_symbol(sem_id) ((sem_id).semtype == SEM_TYPE_SYMBOL)
+#define is_process(sem_id) ((sem_id).semtype == SEM_TYPE_PROCESS)
+#define is_structure(sem_id) ((sem_id).semtype == SEM_TYPE_STRUCTURE)
+#define is_protocol(sem_id) ((sem_id).semtype == SEM_TYPE_PROTOCOL)
+#define is_receptor(sem_id) ((sem_id).semtype == SEM_TYPE_RECEPTOR)
 
 typedef uint32_t Context;     // 4G types of receptors
 typedef uint16_t SemanticType; // 256 types of semantic things (but using 2 bytes for struct alignment!)
 typedef uint16_t SemanticAddr;// 64K types of symbols/structure per receptor
 
+/*
+ * These aren the internal symbols of Ceptr used where-ever a semantic tag is
+ * needed. I don't think we want two symbols with the same name in different contexts
+ * but it isn't totally clear what context is semantically. Sort of like user/system
+ * Likewise with types, so either (don't like) context determines or maybe prefixes
+ * for the enum values?
+ * so :sys_structure_Name for a system context structure? :Name for a plain (non-sys)
+ * symbol and so on.
+ */
+// bit-packing, ugly and unnecessary
 typedef struct SemanticID {
     Context context;
     SemanticType semtype;
@@ -35,44 +46,49 @@ typedef SemanticID Recept;
 
 
 // ** types for matrix trees
+// exactly what are matrix types? Hide/remove this detail.
 typedef uint16_t Mlevel;
 typedef uint32_t Mindex;
 typedef uint32_t Mmagic;
 
-typedef struct N {
+typedef struct Node {
     Symbol symbol;
     Mindex parenti;
     uint32_t flags;
     uint32_t cur_child;  // for active run-trees
     size_t size;
     void *surface;  // this item must be last!!!
-} N;
+} Node, N; // convert to longer names and remove
 
-typedef struct L {
+typedef struct Level {
     Mindex nodes;
-    N *nP;
-} L;
+    Node *nP;
+} Level, L; // convert to longer names and remove
 
-typedef struct M {
+typedef struct Mtree {
     Mmagic magic;
     Mlevel levels;
-    L *lP;
-} M;
+    Level *lP;
+} Mtree, M; // convert to longer names and remove
 
 // node entries are fixed size but the surface when serialized is an offset
 // in the blob not a pointer
+// ugly appearances of low level format details everywhere, remove
 #define SERIALIZED_NODE_SIZE (sizeof(N)-sizeof(void *)+sizeof(size_t))
 #define SERIALIZED_LEVEL_SIZE(l) (sizeof(Mindex)+SERIALIZED_NODE_SIZE*l->nodes)
 #define SERIALIZED_HEADER_SIZE(levels) (sizeof(S)+sizeof(uint32_t)*(levels))
 
-typedef struct S {
+typedef struct SerialMtree {
     Mmagic magic;
     size_t total_size;
     Mlevel levels;
     uint32_t blob_offset;
     uint32_t level_offsets[];
-} S;
+} SerialMtree, S;
 
+// I guess this is what is meant by "matrix", implicitely this is a breadth first
+// representation: 0: (root node), 1: (children) 2: (children's childres)
+// This is just about the addressing scheme of serialized data, we don't need it
 #define NULL_ADDR -1
 typedef struct Maddr {
     Mlevel l;
@@ -80,11 +96,12 @@ typedef struct Maddr {
 } Maddr;
 
 // ** generic tree type defs
-typedef struct H {
-    M *m;
+typedef struct HashTree {
+    Mtree *m;
     Maddr a;
-} H;
+} HashTree, H;
 
+// I don't see that this is even used, maybe in magic numbers?
 enum treeImplementations {ptrImpl=0xfffffffe,matrixImpl=0xffffffff};
 #define FIRST_TREE_IMPL_TYPE ptrImpl
 #define LAST_TREE_IMPL_TYPE matrixImpl
@@ -93,8 +110,8 @@ enum treeImplementations {ptrImpl=0xfffffffe,matrixImpl=0xffffffff};
 // ** types for pointer trees
 typedef struct Tstruct {
     uint32_t child_count;
-    struct T *parent;
-    struct T **children;
+    struct TreeNode *parent;
+    struct TreeNode **children;
 } Tstruct;
 
 typedef struct Tcontents {
@@ -108,14 +125,22 @@ typedef struct Tcontext {
 } Tcontext;
 
 /**
- * A tree node
+ * A TreeNode:
+ *  structure: relative nodes
+ *    children[]
+ *    parent
+ *  context: ? logical context -- detail what is 'contextualized' by a node's context
+ *  contents: The 'value' of this node
+ *    symbol: I think this is always the label of the link from the parent to this child
+ *    surface: I think this is in-effect the 'type' of this node, should be the
+ *             semantic id of the type of the node (I think)
  *
  */
-typedef struct T {
+typedef struct TreeNode {
     Tstruct structure;
     Tcontext context;
     Tcontents contents;
-} T;
+} TreeNode, T;
 
 #define RUN_TREE_NOT_EVAULATED       0
 #define RUN_TREE_EVALUATED           0xffffffff
@@ -125,18 +150,18 @@ typedef struct T {
  *  just like T nodes but with run state data appended
  * used in rclone
  **/
-typedef struct rT {
+typedef struct RunTree {
     Tstruct structure;
     Tcontext context;
     Tcontents contents;
     uint32_t cur_child;
-} rT;
+} RunTree, rT;
 
 // macro helper to get at the cur_child element of a run-tree node when given a regular
 // node (does the casting to make code look cleaner)
 #define rt_cur_child(tP) (((rT *)tP)->cur_child)
 
-typedef uint32_t TreeHash;
+typedef uint32_t TreeHash; // Maybe call this TreeKey ? Don't confuse with Hash type
 
 // ** types for labels
 typedef uint32_t Label;
@@ -146,36 +171,36 @@ typedef uint32_t Label;
  *
  */
 typedef struct table_elem {
-    UT_hash_handle hh;         ///< makes this structure hashable using the uthash library
-    Label label;               ///< semantic key
-    int path_s;                ///< first int of the path to the labeled item in the Receptor tree
-} table_elem;
-typedef table_elem *LabelTable;
+    UT_hash_handle hh; ///< makes this structure hashable using the uthash library
+    Label label;       ///< semantic key
+    int path_s;        ///< first int of the path to the labeled item in the Receptor tree
+} table_elem, *LabelTable;
 
 // for now store instances in an INSTANCES semantic tree
-typedef T *Instances;
+typedef TreeNode *Instances;
+typedef Instances *TreeNodes;  // this might be clearer
 
 typedef struct ConversationState ConversationState;
 struct ConversationState {
-    T *converse_pointer;    ///< pointer to the CONVERSE instruction in the run tree
-    T *cid;                 ///< pointer to CONVERSATION_IDENT in receptors CONVERSATIONS tree
+    TreeNode *converse_pointer;///< pointer to the CONVERSE instruction in the run tree
+    TreeNode *cid;  ///< pointer to CONVERSATION_IDENT in receptors CONVERSATIONS tree
     ConversationState *next;
 };
 
 // ** types for processing
 // run-tree context
-typedef struct R R;
-struct R {
+typedef struct Runner Runner, R; // switch to longer name
+struct Runner {
     int id;           ///< the process id this context exists in
     int err;          ///< process error value
     int state;        ///< process state machine state
-    T *run_tree;      ///< pointer to the root of the run_tree
-    T *node_pointer;  ///< pointer to the tree node to execute next
-    T *parent;        ///< node_pointer's parent      (cached here for efficiency)
+    TreeNode *run_tree; ///< pointer to the root of the run_tree
+    TreeNode *node_pointer;  ///< pointer to the tree node to execute next
+    TreeNode *parent; ///< node_pointer's parent      (cached here for efficiency)
     int idx;          ///< node pointers child index  (cached here for efficiency)
-    R *caller;        ///< a pointer to the context that invoked this run-tree/context
-    R *callee;        ///< a pointer to the context we've invoked
-    T *sem_map;       ///< semantic map in effect for this context
+    Runner *caller;  ///< a pointer to the context that invoked this run-tree/context
+    Runner *callee;  ///< a pointer to the context we've invoked
+    TreeNode *sem_map; ///< semantic map in effect for this context
     ConversationState *conversation;  ///< record of the conversation state active in this context frame
 };
 
@@ -186,35 +211,34 @@ struct Accounting {
 };
 
 // Processing Queue element
-typedef struct Qe Qe;
-struct Qe {
+typedef struct QueElement QueElement, Qe;
+struct QueElement {
     int id;
-    R *context;
+    Runner *context;
     Accounting accounts;
-    Qe *next;
-    Qe *prev;
+    QueElement *next;
+    QueElement *prev;
 };
 
 typedef struct ReceptorAddress {
     int addr;
 } ReceptorAddress;
 
-typedef struct Receptor Receptor;
+typedef struct Receptor Receptor; // about to use it, define this now
 
 // Processing Queue structure
-typedef struct Q Q;
-struct Q {
-    Receptor *r;         ///< back-pointer to receptor in which this Q is running (for defs and more)
+typedef struct Queue {
+    Receptor *ceptr;         ///< back-pointer to receptor in which this Q is running (for defs and more)
     int contexts_count;  ///< number of active processes
-    Qe *active;          ///< active processes
-    Qe *completed;       ///< completed processes (pending cleanup)
-    Qe *blocked;         ///< blocked processes
+    QueElement *active;          ///< active processes
+    QueElement *completed;       ///< completed processes (pending cleanup)
+    QueElement *blocked;         ///< blocked processes
     pthread_mutex_t mutex;
-};
+} Queue, Q;
 
 // SemTable structures
 typedef struct ContextStore {
-    T *definitions;
+    TreeNode *definitions;
     //LabelTable table;    ///< the label table for this context?
 } ContextStore;
 
@@ -234,22 +258,23 @@ enum ReceptorStates {Alive=0,Dead};
    faster access to some parts of the tree, and to hold non-tree data, like the label
    table.
 */
+// class Receptor # will be a key class in any implementation
 struct Receptor {
-    T *root;             ///< RECEPTOR_INSTANCE semantic tree
+    TreeNode *root;      ///< RECEPTOR_INSTANCE semantic tree
     Context parent;      ///< the context this receptor's definition lives in
     Context context;     ///< the context this receptor's definition creates
     ReceptorAddress addr;///< the address by which to get messages to this receptor instance
     SemTable *sem;       ///< pointer back to the genotype table for this receptor's vmhost instance
-    T *flux;             ///< pointer for quick access to the flux
-    T *pending_signals;
-    T *pending_responses;
-    T *conversations;
+    TreeNode *flux;      ///< pointer for quick access to the flux
+    TreeNode *pending_signals;
+    TreeNode *pending_responses;
+    TreeNode *conversations;
     pthread_mutex_t pending_signals_mutex;
     pthread_mutex_t pending_responses_mutex;
     Instances instances; ///< the instances store
-    Q *q;                ///< process queue
+    Queue *q;            ///< process queue
     int state;           ///< state information about the receptor that the vmhost manages
-    T *edge;             ///< data store for edge receptors
+    TreeNode *edge;      ///< data store for edge receptors
 };
 
 typedef struct UUIDt {
@@ -262,7 +287,8 @@ enum AspectType {EXTERNAL_ASPECT=0,INTERNAL_ASPECT};
 typedef Symbol Aspect;  //aspects are identified by a semantic Symbol identifier
 
 /**
- * An eXistence Address consists of the semantic type (Symbol) and an address.
+ * An eXistence Address consists of the semantic id (Symbol) and an address.
+ * address of what? A channel maybe?
  */
 typedef struct Xaddr {
     Symbol symbol;
@@ -277,7 +303,7 @@ typedef int Error;
  * An element in the scape key value pair store
  */
 typedef struct scape_elem {
-    TreeHash key;            ///< has of the key tree that maps to a given data value
+    TreeHash key;            ///< hash key of the tree that maps to a given data value
     Xaddr value;             ///< instance of data_source pointed to by the key
     UT_hash_handle hh;       ///< makes this structure hashable using the uthash library
 } scape_elem;

@@ -13,7 +13,6 @@
 #include "../src/def.h"
 #include "../src/semtrex.h"
 #include "spec_utils.h"
-#include "../src/vmhost.h"
 #include "../src/accumulator.h"
 #include <unistd.h>
 
@@ -74,9 +73,9 @@ void _makeTestHTTPResponseProcess(Receptor *r,T **paramsP,Process *pP) {
 
 
     /*     _t_new_root(PARAMS); */
-    /* T *http_resp = _t_newr(params,HTTP_RESPONSE); */
+    /* T *http_resp = _t_new_node(params,HTTP_RESPONSE); */
     /* _t_new(http_resp,HTTP_RESPONSE_CONTENT_TYPE,"CeptrSymbol/HTTP_REQUEST_PATH_SEGMENT",38); */
-    /* T *s = _t_newr(http_resp,SLOT); */
+    /* T *s = _t_new_node(http_resp,SLOT); */
     /* _t_news(s,USAGE,HTTP_REQUEST_PATH_SEGMENT); */
     *paramsP = params;
 }
@@ -94,57 +93,57 @@ T *_makeHTTPRequestSemtrex() {
 
     T *stx= _sl(0,ASCII_CHARS);
     t = _t_news(stx,SEMTREX_GROUP,HTTP_REQUEST);
-    T *sq = _t_newr(t,SEMTREX_SEQUENCE);
+    T *sq = _t_new_node(t,SEMTREX_SEQUENCE);
     t = _t_news(sq,SEMTREX_GROUP,HTTP_REQUEST_METHOD);
-    t = _t_newr(t,SEMTREX_ONE_OR_MORE);
+    t = _t_new_node(t,SEMTREX_ONE_OR_MORE);
     __stxcvm(t,1,1,' ');  //!= ' '
     __stxcv(sq,' ');
 
     t = _t_news(sq,SEMTREX_GROUP,HTTP_REQUEST_PATH);
-    T *sqq = _t_newr(t,SEMTREX_SEQUENCE);
+    T *sqq = _t_new_node(t,SEMTREX_SEQUENCE);
 
     t = _t_news(sqq,SEMTREX_GROUP,HTTP_REQUEST_PATH_SEGMENTS);
-    t = _t_newr(t,SEMTREX_ONE_OR_MORE);
-    t = _t_newr(t,SEMTREX_SEQUENCE);
+    t = _t_new_node(t,SEMTREX_ONE_OR_MORE);
+    t = _t_new_node(t,SEMTREX_SEQUENCE);
     __stxcv(t,'/');
     t = _t_news(t,SEMTREX_GROUP,HTTP_REQUEST_PATH_SEGMENT);
-    t = _t_newr(t,SEMTREX_ZERO_OR_MORE);
+    t = _t_new_node(t,SEMTREX_ZERO_OR_MORE);
     __stxcvm(t,1,3,'/','?',' ');
 
     /* t = _t_news(sq,SEMTREX_GROUP,HTTP_REQUEST_PATH_FILE); */
-    /* T *f = _t_newr(t,SEMTREX_SEQUENCE); */
+    /* T *f = _t_new_node(t,SEMTREX_SEQUENCE); */
     /* t = _t_news(f,SEMTREX_GROUP,FILE_NAME); */
-    /* t = _t_newr(t,SEMTREX_ONE_OR_MORE); */
+    /* t = _t_new_node(t,SEMTREX_ONE_OR_MORE); */
     /* __stxcvm(t,1,2,'?',' '); */
 
-    /* t = _t_newr(f,SEMTREX_ZERO_OR_ONE); */
-    /* t = _t_newr(t,SEMTREX_SEQUENCE); */
+    /* t = _t_new_node(f,SEMTREX_ZERO_OR_ONE); */
+    /* t = _t_new_node(t,SEMTREX_SEQUENCE); */
     /* __stxcv(t,'.'); */
     /* t = _t_news(t,SEMTREX_GROUP,FILE_EXTENSION); */
-    /* t = _t_newr(t,SEMTREX_ONE_OR_MORE); */
+    /* t = _t_new_node(t,SEMTREX_ONE_OR_MORE); */
     /* __stxcvm(t,1,2,'?',' '); */
 
-    t = _t_newr(sq,SEMTREX_ZERO_OR_ONE);
-    t = _t_newr(t,SEMTREX_SEQUENCE);
+    t = _t_new_node(sq,SEMTREX_ZERO_OR_ONE);
+    t = _t_new_node(t,SEMTREX_SEQUENCE);
     __stxcv(t,'?');
 
     T *f;
     t = _t_news(t,SEMTREX_GROUP,HTTP_REQUEST_PATH_QUERY);
-    t = _t_newr(t,SEMTREX_ONE_OR_MORE);
+    t = _t_new_node(t,SEMTREX_ONE_OR_MORE);
     t = _t_news(t,SEMTREX_GROUP,HTTP_REQUEST_PATH_QUERY_PARAMS);
-    t = _t_newr(t,SEMTREX_ONE_OR_MORE);
-    T *qps = _t_newr(t,SEMTREX_SEQUENCE);
+    t = _t_new_node(t,SEMTREX_ONE_OR_MORE);
+    T *qps = _t_new_node(t,SEMTREX_SEQUENCE);
     t = _t_news(qps,SEMTREX_GROUP,HTTP_REQUEST_PATH_QUERY_PARAM);
-    f = _t_newr(t,SEMTREX_SEQUENCE);
+    f = _t_new_node(t,SEMTREX_SEQUENCE);
     t = _t_news(f,SEMTREX_GROUP,PARAM_KEY);
-    t = _t_newr(t,SEMTREX_ONE_OR_MORE);
+    t = _t_new_node(t,SEMTREX_ONE_OR_MORE);
     __stxcvm(t,1,3,'&',' ','=');
     __stxcv(f,'=');
     t = _t_news(f,SEMTREX_GROUP,PARAM_VALUE);
-    t = _t_newr(t,SEMTREX_ZERO_OR_MORE);
+    t = _t_new_node(t,SEMTREX_ZERO_OR_MORE);
     __stxcvm(t,1,2,'&',' ');
 
-    t = _t_newr(qps,SEMTREX_ZERO_OR_ONE);
+    t = _t_new_node(qps,SEMTREX_ZERO_OR_ONE);
     __stxcv(t,'&');
 
     __stxcv(sq,' ');
@@ -155,7 +154,7 @@ T *_makeHTTPRequestSemtrex() {
     __stxcv(sq,'P');
     __stxcv(sq,'/');
     t = _t_news(sq,SEMTREX_GROUP,HTTP_REQUEST_VERSION);
-    t = _t_newr(t,SEMTREX_SEQUENCE);
+    t = _t_new_node(t,SEMTREX_SEQUENCE);
     f = _t_news(t,SEMTREX_GROUP,VERSION_MAJOR);
     __stxcv(f,'0');
     __stxcv(t,'.');
@@ -217,7 +216,7 @@ T *parseHTML(char *html) {
         T *a = _t_new_root(HTML_ATTRIBUTES);
         int j,ac = _t_children(c);
         for(j=4;j<=ac;j++) {
-            T *attr = _t_newr(a,HTML_ATTRIBUTE);
+            T *attr = _t_new_node(a,HTML_ATTRIBUTE);
             T *at = _t_child(c,j);
             T *m = _t_get_match(at,PARAM_KEY);
             asciiT_tos(h,m,attr,PARAM_KEY);
@@ -241,13 +240,13 @@ T *parseHTML(char *html) {
     _t_free(s);
 
     s = _t_new_root(SEMTREX_WALK);
-    //  T *st = _t_newr(sq,SEMTREX_ZERO_OR_MORE);
-    //  _t_newr(st,SEMTREX_SYMBOL_ANY);
+    //  T *st = _t_new_node(sq,SEMTREX_ZERO_OR_MORE);
+    //  _t_new_node(st,SEMTREX_SYMBOL_ANY);
     T *g =  _t_news(s,SEMTREX_GROUP,HTML_TAG);
-    T *sq = _t_newr(g,SEMTREX_SEQUENCE);
+    T *sq = _t_new_node(g,SEMTREX_SEQUENCE);
     _sl(sq,HTML_TOK_TAG_OPEN);
     g = _t_news(sq,SEMTREX_GROUP,HTML_CONTENT);
-    T* st = _t_newr(g,SEMTREX_ZERO_OR_MORE);
+    T* st = _t_new_node(g,SEMTREX_ZERO_OR_MORE);
     __sl(st,1,2,HTML_TOK_TAG_OPEN,HTML_TOK_TAG_CLOSE);
     _sl(sq,HTML_TOK_TAG_CLOSE);
 
@@ -293,7 +292,7 @@ T *parseHTML(char *html) {
         char *otag = _t_surface(t);
         Symbol ts = getTag(otag,G_stag_sym,G_stag_str);
         __t_morph(t,ts,0,0,0);
-        _t_newr(t,HTML_CONTENT);
+        _t_new_node(t,HTML_CONTENT);
         delta = makeDelta(TREE_DELTA_REPLACE,path,t,1);
         wjson(G_sem,delta,"html",fnc++);
         _t_free(delta);
@@ -356,7 +355,7 @@ void testHTTPedgeReceptor() {
     // create empty edge receptor
     Receptor *r = _r_makeStreamEdgeReceptor(v->sem);
     // instantiate it in the vmhost
-    Xaddr edge = _v_new_receptor(v,v->r,STREAM_EDGE,r);
+    Xaddr edge = _v_new_receptor(v,v->ceptr,STREAM_EDGE,r);
     // set up a socket listener that will transcode ascii to HTTP_REQUEST and send all the received requests to an HTTP aspect on the same receptor
     T *code = _t_parse(r->sem,0,"(CONVERSE (SCOPE (ITERATE (PARAMS) (STREAM_ALIVE (PARAM_REF:/2/1)) (INITIATE_PROTOCOL (PNAME:HTTP) (WHICH_INTERACTION:backnforth) (PROTOCOL_BINDINGS (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_CLIENT) %)) (RESOLUTION (WHICH_RECEPTOR (ROLE:HTTP_SERVER) %)) (RESOLUTION (WHICH_PROCESS (GOAL:RESPONSE_HANDLER) (ACTUAL_PROCESS:echo2stream))) (RESOLUTION (WHICH_USAGE (USAGE:RESPONSE_HANDLER_PARAMETERS) (ACTUAL_VALUE (PARAM_REF:/2/1)))) (RESOLUTION (WHICH_VALUE (ACTUAL_SYMBOL:HTTP_REQUEST) (ACTUAL_VALUE (STREAM_READ (PARAM_REF:/2/1) (RESULT_SYMBOL:HTTP_REQUEST)))))) ) ) (STREAM_CLOSE (PARAM_REF:/2/1))) (BOOLEAN:1))",__r_make_addr(0,ACTUAL_RECEPTOR,r->addr),__r_make_addr(0,ACTUAL_RECEPTOR,r->addr));
     // add an error handler that just completes the iteration
@@ -366,12 +365,12 @@ void testHTTPedgeReceptor() {
     _v_activate(v,edge);
 
     T *bindings = _t_new_root(PROTOCOL_BINDINGS);
-    T *res = _t_newr(bindings,RESOLUTION);
-    T *w = _t_newr(res,WHICH_RECEPTOR);
+    T *res = _t_new_node(bindings,RESOLUTION);
+    T *w = _t_new_node(res,WHICH_RECEPTOR);
     _t_news(w,ROLE,HTTP_SERVER);
     __r_make_addr(w,ACTUAL_RECEPTOR,r->addr);
-    res = _t_newr(bindings,RESOLUTION);
-    w = _t_newr(res,WHICH_PROCESS);
+    res = _t_new_node(bindings,RESOLUTION);
+    w = _t_new_node(res,WHICH_PROCESS);
     _t_news(w,GOAL,HTTP_REQUEST_HANDLER);
     _t_news(w,ACTUAL_PROCESS,fill_i_am);
 
@@ -401,7 +400,7 @@ void testHTTPedgeReceptor() {
     //spec_is_str_equal(t2s(r->flux),"");
 
     // cleanup vmhost instance
-    __r_kill(G_vm->r);
+    __r_kill(G_vm->ceptr);
     //    _v_join_thread(&G_vm->clock_thread);
     _v_join_thread(&G_vm->vm_thread);
 

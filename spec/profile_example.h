@@ -77,16 +77,16 @@ void _cleanupProfileDefs() {
 void testProfileExample() {
     _setupProfileDefs();
     T *t = _t_new_root(USER_PROFILE);
-    T *n = _t_newr(t,PROFILE_NAME);
-    T *a = _t_newr(t,PROFILE_ADDRESS);
-    T *e = _t_new_str(t,PROFILE_EMAIL,"test@example.com");
-    _t_new_str(n,FIRST_NAME,"Jane");
-    _t_new_str(n,LAST_NAME,"Smith");
-    _t_new_str(a,STREET_ADDRESS,"126 Main Street");
-    _t_new_str(a,CITY,"Smallville");
-    _t_new_str(a,STATE,"CA");
-    _t_new_str(a,ZIP,"12345");
-    _t_new_str(a,COUNTRY,"USA");
+    T *n = _t_new_node(t,PROFILE_NAME);
+    T *a = _t_new_node(t,PROFILE_ADDRESS);
+    T *e = _t_new_string(t,PROFILE_EMAIL,"test@example.com");
+    _t_new_string(n,FIRST_NAME,"Jane");
+    _t_new_string(n,LAST_NAME,"Smith");
+    _t_new_string(a,STREET_ADDRESS,"126 Main Street");
+    _t_new_string(a,CITY,"Smallville");
+    _t_new_string(a,STATE,"CA");
+    _t_new_string(a,ZIP,"12345");
+    _t_new_string(a,COUNTRY,"USA");
 
     SemTable *sem = test_profile_receptor->sem;
     wjson(sem,t,"user_profile",-1);
@@ -109,20 +109,20 @@ void testProfileExample() {
     int pt6[] = {2,1,2,4,TREE_PATH_TERMINATOR};
 
     _t_news(code,RESULT_SYMBOL,MAILING_LABEL);
-    T *c = _t_newr(code,CONCAT_STR);
+    T *c = _t_new_node(code,CONCAT_STR);
     //    _t_news(c,RESULT_SYMBOL,TEST_NAME_SYMBOL);
     _t_new(c,PARAM_REF,pt1,sizeof(int)*5);
-    _t_new_str(c,TEST_STR_SYMBOL," ");
+    _t_new_string(c,TEST_STR_SYMBOL," ");
     _t_new(c,PARAM_REF,pt2,sizeof(int)*5);
-    _t_new_str(code,TEST_STR_SYMBOL,"\\n");
+    _t_new_string(code,TEST_STR_SYMBOL,"\\n");
     _t_new(code,PARAM_REF,pt3,sizeof(int)*5);
-    _t_new_str(code,TEST_STR_SYMBOL,"\\n");
-    c = _t_newr(code,CONCAT_STR);
+    _t_new_string(code,TEST_STR_SYMBOL,"\\n");
+    c = _t_new_node(code,CONCAT_STR);
     //    _t_news(c,RESULT_SYMBOL,TEST_NAME_SYMBOL);
     _t_new(c,PARAM_REF,pt4,sizeof(int)*5);
-    _t_new_str(c,TEST_STR_SYMBOL,", ");
+    _t_new_string(c,TEST_STR_SYMBOL,", ");
     _t_new(c,PARAM_REF,pt5,sizeof(int)*5);
-    _t_new_str(c,TEST_STR_SYMBOL," ");
+    _t_new_string(c,TEST_STR_SYMBOL," ");
     _t_new(c,PARAM_REF,pt6,sizeof(int)*5);
 
     //    _t_new(code,PARAM_REF,pt2,sizeof(int)*4);

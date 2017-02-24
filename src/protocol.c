@@ -8,16 +8,13 @@
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
 
-#include "protocol.h"
-#include "vmhost.h"
-#include "semtrex.h"
-#include "debug.h"
+#include "sys_defs.h"
 
 extern VMHost *G_vm;
 
 void *_o_add_label(char *label,T *def) {
     T *l = _t_new_root(PROTOCOL_LABEL);
-    _t_new_str(l,ENGLISH_LABEL,label);
+    _t_new_string(l,ENGLISH_LABEL,label);
     int path[2] = {1,TREE_PATH_TERMINATOR};
     _t_insert_at(def,path,l);
 }
@@ -41,9 +38,9 @@ T *_o_make_protocol_def(SemTable *sem,Context c,char *label,...) {
     Symbol state = PROTOCOL_SEMANTICS;
     bool in_conv = false;
     T *p = _t_new_root(PROTOCOL_DEFINITION);
-    T *l = _t_newr(p,PROTOCOL_LABEL);
-    _t_new_str(l,ENGLISH_LABEL,label);
-    T *t = _t_newr(p,PROTOCOL_SEMANTICS);
+    T *l = _t_new_node(p,PROTOCOL_LABEL);
+    _t_new_string(l,ENGLISH_LABEL,label);
+    T *t = _t_new_node(p,PROTOCOL_SEMANTICS);
     bool done = false;
     Symbol param;
     bool pop = false;
@@ -77,22 +74,22 @@ T *_o_make_protocol_def(SemTable *sem,Context c,char *label,...) {
         if (semeq(state,PROTOCOL_SEMANTICS)) {
             if (semeq(param,ROLE)) {
                 Symbol role = va_arg(params,Symbol);
-                _t_news(t,ROLE,role);
+                _t_new_sym(t,ROLE,role);
             }
             else if (semeq(param,GOAL)) {
                 Symbol role = va_arg(params,Symbol);
-                _t_news(t,GOAL,role);
+                _t_new_sym(t,GOAL,role);
             }
             else if (semeq(param,USAGE)) {
                 Symbol role = va_arg(params,Symbol);
-                _t_news(t,USAGE,role);
+                _t_new_sym(t,USAGE,role);
             }
             else pop = true;
         }
         if (semeq(state,INTERACTION)) {
             if (semeq(param,INTERACTION)) {
                 Symbol interaction =  va_arg(params,Symbol);
-                t = _t_newr(t,interaction);
+                t = _t_new_node(t,interaction);
             }
             else if (semeq(param,EXPECT) || semeq(param,INITIATE)) {
                 p = t;
@@ -102,12 +99,12 @@ T *_o_make_protocol_def(SemTable *sem,Context c,char *label,...) {
         }
         if (semeq(state,EXPECT)) {
             if (semeq(param,EXPECT)) {
-                t = _t_newr(p,EXPECT);
+                t = _t_new_node(p,EXPECT);
                 Symbol role = va_arg(params,Symbol);
-                _t_news(t,ROLE,role);
-                T *s = _t_newr(t,SOURCE);
+                _t_new_sym(t,ROLE,role);
+                T *s = _t_new_node(t,SOURCE);
                 Symbol source = va_arg(params,Symbol);
-                _t_news(s,ROLE,source);
+                _t_new_sym(s,ROLE,source);
                 T *pattern = va_arg(params,T*);
                 _t_add(t,pattern);
                 T *action = va_arg(params,T*);
@@ -117,12 +114,12 @@ T *_o_make_protocol_def(SemTable *sem,Context c,char *label,...) {
         }
         if (semeq(state,INITIATE)) {
             if (semeq(param,INITIATE)) {
-                t = _t_newr(p,INITIATE);
+                t = _t_new_node(p,INITIATE);
                 Symbol role = va_arg(params,Symbol);
-                _t_news(t,ROLE,role);
-                T *s = _t_newr(t,DESTINATION);
+                _t_new_sym(t,ROLE,role);
+                T *s = _t_new_node(t,DESTINATION);
                 Symbol source = va_arg(params,Symbol);
-                _t_news(s,ROLE,source);
+                _t_new_sym(s,ROLE,source);
                 T *action = va_arg(params,T*);
                 _t_add(t,action);
             }
@@ -130,45 +127,45 @@ T *_o_make_protocol_def(SemTable *sem,Context c,char *label,...) {
         }
         if (semeq(state,INCLUSION)) {
             if (semeq(param,INCLUSION)) {
-                t = _t_newr(p,INCLUSION);
+                t = _t_new_node(p,INCLUSION);
                 Symbol pname = va_arg(params,Symbol);
-                _t_news(t,PNAME,pname);
+                _t_new_sym(t,PNAME,pname);
             }
             else if (semeq(param,WHICH_SYMBOL)) {
-                T *l = _t_newr(t,RESOLUTION);
-                T *w = _t_newr(l,WHICH_SYMBOL);
-                _t_news(w,USAGE,va_arg(params,Symbol));
-                _t_news(w,ACTUAL_SYMBOL,va_arg(params,Symbol));
+                T *l = _t_new_node(t,RESOLUTION);
+                T *w = _t_new_node(l,WHICH_SYMBOL);
+                _t_new_sym(w,USAGE,va_arg(params,Symbol));
+                _t_new_sym(w,ACTUAL_SYMBOL,va_arg(params,Symbol));
             }
             else if (semeq(param,WHICH_PROCESS)) {
-                T *l = _t_newr(t,RESOLUTION);
-                T *w = _t_newr(l,WHICH_PROCESS);
-                _t_news(w,GOAL,va_arg(params,Process));
-                _t_news(w,ACTUAL_PROCESS,va_arg(params,Process));
+                T *l = _t_new_node(t,RESOLUTION);
+                T *w = _t_new_node(l,WHICH_PROCESS);
+                _t_new_sym(w,GOAL,va_arg(params,Process));
+                _t_new_sym(w,ACTUAL_PROCESS,va_arg(params,Process));
             }
             else if (semeq(param,WHICH_RECEPTOR)) {
-                T *l = _t_newr(t,RESOLUTION);
-                T *w = _t_newr(l,WHICH_RECEPTOR);
-                _t_news(w,ROLE,va_arg(params,Symbol));
-                _t_news(w,ACTUAL_RECEPTOR,va_arg(params,Symbol));
+                T *l = _t_new_node(t,RESOLUTION);
+                T *w = _t_new_node(l,WHICH_RECEPTOR);
+                _t_new_sym(w,ROLE,va_arg(params,Symbol));
+                _t_new_sym(w,ACTUAL_RECEPTOR,va_arg(params,Symbol));
             }
             else if (semeq(param,WHICH_USAGE)) {
-                T *l = _t_newr(t,LINKAGE);
-                T *w = _t_newr(l,WHICH_USAGE);
-                _t_news(w,USAGE,va_arg(params,Symbol));
-                _t_news(w,USAGE,va_arg(params,Symbol));
+                T *l = _t_new_node(t,LINKAGE);
+                T *w = _t_new_node(l,WHICH_USAGE);
+                _t_new_sym(w,USAGE,va_arg(params,Symbol));
+                _t_new_sym(w,USAGE,va_arg(params,Symbol));
             }
             else if (semeq(param,WHICH_GOAL)) {
-                T *l = _t_newr(t,LINKAGE);
-                T *w = _t_newr(l,WHICH_GOAL);
-                _t_news(w,GOAL,va_arg(params,Process));
-                _t_news(w,GOAL,va_arg(params,Process));
+                T *l = _t_new_node(t,LINKAGE);
+                T *w = _t_new_node(l,WHICH_GOAL);
+                _t_new_sym(w,GOAL,va_arg(params,Process));
+                _t_new_sym(w,GOAL,va_arg(params,Process));
             }
             else if (semeq(param,WHICH_ROLE)) {
-                T *l = _t_newr(t,LINKAGE);
-                T *w = _t_newr(l,WHICH_ROLE);
-                _t_news(w,ROLE,va_arg(params,Symbol));
-                _t_news(w,ROLE,va_arg(params,Symbol));
+                T *l = _t_new_node(t,LINKAGE);
+                T *w = _t_new_node(l,WHICH_ROLE);
+                _t_new_sym(w,ROLE,va_arg(params,Symbol));
+                _t_new_sym(w,ROLE,va_arg(params,Symbol));
             }
             else pop = true;
         }
@@ -237,9 +234,9 @@ T *_o_bindings2sem_map(T *bindings, T *sem_map,T *defaults) {
     DO_KIDS(bindings,
             T *res = _t_child(bindings,i);
             T *w = _t_child(res,ResolutionWhichIdx);
-            T *t = _t_newr(sem_map,SEMANTIC_LINK);
+            T *t = _t_new_node(sem_map,SEMANTIC_LINK);
             _t_add(t,_t_clone(_t_child(w,1)));
-            T *r = _t_newr(t,REPLACEMENT_VALUE);
+            T *r = _t_new_node(t,REPLACEMENT_VALUE);
             _t_add(r,_t_clone(_t_child(w,2)));
             );
     if (defaults) {
@@ -275,9 +272,9 @@ T * _o_unwrap(SemTable *sem,T *def,T *sem_map) {
                 T *x = _t_child(t,j); // get the connection or resolution
                 if (semeq(_t_symbol(x),LINKAGE)) {
                     T *w = _t_child(x,ConnectionWhichIdx);  // get the which
-                    T *t = _t_newr(sem_map,SEMANTIC_LINK);
+                    T *t = _t_new_node(sem_map,SEMANTIC_LINK);
                     _t_add(t,_t_clone(_t_child(w,1)));
-                    T *r = _t_newr(t,REPLACEMENT_VALUE);
+                    T *r = _t_new_node(t,REPLACEMENT_VALUE);
                     _t_add(r,_t_clone(_t_child(w,2)));
                 }
                 else if (semeq(_t_symbol(x),RESOLUTION)) {

@@ -8,17 +8,11 @@
  *
  * @copyright Copyright (C) 2013-2016, The MetaCurrency Project (Eric Harris-Braun, Arthur Brock, et. al).  This file is part of the Ceptr platform and is released under the terms of the license contained in the file LICENSE (GPLv3).
  */
-#include "process.h"
-#include "def.h"
-#include "semtrex.h"
+#include "sys_defs.h"
+#include "../spec/spec_utils.h" // what?
 #include <stdarg.h>
-#include "receptor.h"
-#include "../spec/spec_utils.h"
-#include "util.h"
-#include "debug.h"
 #include <errno.h>
-#include "accumulator.h"
-#include "protocol.h"
+
 void rt_check(Receptor *r,T *t) {
     if (!(t->context.flags & TFLAG_RUN_NODE)) raise_error("Whoa! Not a run node! %s\n",_td(r,t));
 }
@@ -54,10 +48,10 @@ void processUnblocker(Stream *st) {
 
 // setup the default until condition (only once, and 30 second timeout)
 T *defaultRequestUntil() {
-    T *until = _t_newr(0,END_CONDITIONS);
+    T *until = _t_new_node(0,END_CONDITIONS);
     T *ts = __r_make_timestamp(TIMEOUT_AT,30);
     _t_add(until,ts);
-    _t_newi(until,COUNT,1);
+    _t_new_int(until,COUNT,1);
     return until;
 }
 
@@ -118,11 +112,11 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
         Process p = _p_get_transcoder(sem,src_sym,to_sym);
         if (!semeq(p,NULL_PROCESS)) {
             // we found a defined process for trans coding between the symbols
-            x = __t_newr(0,p,true);
+            x = __t_new_node(0,p,true);
             _t_add(x,src);
             err=redoReduction;
             dofree = false;
-            //                    __t_newi(x,TEST_INT_SYMBOL,3333,true);
+            //                    __t_new_int(x,TEST_INT_SYMBOL,3333,true);
         }
         else {
             // built in transcodings for built in structures
@@ -134,7 +128,7 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
             }
             else if (semeq(to_s,INTEGER)) {
                 if (semeq(src_s,CSTRING)) {
-                    x = __t_newi(0,to_sym,atoi(_t_surface(src)),true);
+                    x = __t_new_int(0,to_sym,atoi(_t_surface(src)),true);
                 }
                 else return incompatibleTypeReductionErr;
             }
@@ -142,9 +136,9 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
                 if (semeq(src_s,CSTRING)) {
                     char *c = (char *)_t_surface(src);
                     int l = _t_size(src);
-                    x = __t_newr(0,ASCII_CHARS,true);
+                    x = __t_new_node(0,ASCII_CHARS,true);
                     while (--l) { // ignore the terminating null
-                        __t_newc(x,ASCII_CHAR,*c,true);
+                        __t_new_char(x,ASCII_CHAR,*c,true);
                         c++;
                     }
 
@@ -155,18 +149,18 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
                 if (semeq(src_s,INTEGER)) {
                     char buf[100];
                     sprintf(buf,"%d",*(int *)_t_surface(src));
-                    x = __t_new_str(0,to_sym,buf,true);
+                    x = __t_new_string(0,to_sym,buf,true);
                 }
                 else if (semeq(src_s,FLOAT)) {
                     char buf[100];
                     sprintf(buf,"%f",*(float *)_t_surface(src));
-                    x = __t_new_str(0,to_sym,buf,true);
+                    x = __t_new_string(0,to_sym,buf,true);
                 }
                 else if (semeq(src_s,CHAR)) {
                     char buf[2];
                     buf[0] = *(char *)_t_surface(src);
                     buf[1] = 0;
-                    x = __t_new_str(0,to_sym,buf,true);
+                    x = __t_new_string(0,to_sym,buf,true);
                 }
                 else {
 
@@ -177,10 +171,10 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
                     // if it's an optionality structure then we can recurse on transcode
                     // and dissolve the results into the parent
                     if (!semeq(s_def,NULL_SYMBOL)) {
-                        if (_t_children(src) == 0) x = __t_new_str(0,to_sym,"",true);
+                        if (_t_children(src) == 0) x = __t_new_string(0,to_sym,"",true);
                         else {
-                            x = __t_newr(0,DISSOLVE,true);
-                            T *xx = __t_newr(x,LINES,true);
+                            x = __t_new_node(0,DISSOLVE,true);
+                            T *xx = __t_new_node(x,LINES,true);
                             T *k,*r;
                             int e;
                             while ((k = _t_detach_by_idx(src,1))) {
@@ -194,7 +188,7 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
                             err = redoReduction;
                         }
                     }
-                    else x = __t_new_str(0,to_sym,_t2s(sem,src),true);
+                    else x = __t_new_string(0,to_sym,_t2s(sem,src),true);
                 }
             }
             else {
@@ -225,7 +219,7 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
                     if (semeq(tdef_sym,sdef_sym) &&
                         semeq(_t_symbol( _t_child(sdef,1)),STRUCTURE_SYMBOL)) {
                         debug(D_TRANSCODE,"transcoding elements of simple list\n");
-                        x = __t_newr(0,to_sym,true);
+                        x = __t_new_node(0,to_sym,true);
                         T *m,*r;
                         int e;
                         // the to becomes the surface of the STRUCTURE_SYMBOL def
@@ -257,7 +251,7 @@ int _p_transcode(SemTable *sem, T* src,Symbol to_sym, Structure to_s,T **result)
                             }
                             err = redoReduction;
                         }
-                        x = __t_newr(0,to_sym,true);
+                        x = __t_new_node(0,to_sym,true);
                         _t_add(x,singleton);
                         dofree=false;
                     }
@@ -398,7 +392,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
     Symbol sy;
     T *x,*t,*match_results,*match_tree;
     Error err = noReductionErr;
-    SemTable *sem = q ? q->r->sem : G_sem;
+    SemTable *sem = q ? q->ceptr->sem : G_sem;
 
     debug(D_REDUCE,"Reducing sys proc: %s\n",_sem_get_name(sem,s));
     debug(D_STEP,"Reducing %s\n",_t2s(sem,code));
@@ -415,12 +409,12 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *t = _t_detach_by_idx(code,1);
             Xaddr xa = *(Xaddr *)_t_surface(t);
-            T *v = _r_get_instance(q->r,xa);
+            T *v = _r_get_instance(q->ceptr,xa);
             if (!v) raise_error("Invalid xaddr in GET");
             x = _t_rclone(v);
             _t_free(t);
             if (s.id == DEL_ID) {
-                _r_delete_instance(q->r,xa);
+                _r_delete_instance(q->ceptr,xa);
             }
         }
         break;
@@ -428,40 +422,40 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def, SEM_TYPE_SYMBOL,q->r->context);
-            x = __t_news(0,RESULT_SYMBOL,ns,true);
+            SemanticID ns = _d_define(sem,def, SEM_TYPE_SYMBOL,q->ceptr->context);
+            x = __t_new_sym(0,RESULT_SYMBOL,ns,true);
         }
         break;
     case DEF_STRUCTURE_ID:
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def, SEM_TYPE_STRUCTURE,q->r->context);
-            x = __t_news(0,RESULT_STRUCTURE,ns,true);
+            SemanticID ns = _d_define(sem,def, SEM_TYPE_STRUCTURE,q->ceptr->context);
+            x = __t_new_sym(0,RESULT_STRUCTURE,ns,true);
         }
         break;
     case DEF_PROCESS_ID:
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def, SEM_TYPE_PROCESS,q->r->context);
-            x = __t_news(0,RESULT_PROCESS,ns,true);
+            SemanticID ns = _d_define(sem,def, SEM_TYPE_PROCESS,q->ceptr->context);
+            x = __t_new_sym(0,RESULT_PROCESS,ns,true);
         }
         break;
     case DEF_RECEPTOR_ID:
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = __d_define_receptor(sem,def,q->r->context);
-            x = __t_news(0,RESULT_RECEPTOR,ns,true);
+            SemanticID ns = __d_define_receptor(sem,def,q->ceptr->context);
+            x = __t_new_sym(0,RESULT_RECEPTOR,ns,true);
         }
         break;
     case DEF_PROTOCOL_ID:
         {
             T *def = _t_detach_by_idx(code,1);
             //@todo some kind of validation of the def??
-            SemanticID ns = _d_define(sem,def,SEM_TYPE_PROTOCOL,q->r->context);
-            x = __t_news(0,RESULT_PROTOCOL,ns,true);
+            SemanticID ns = _d_define(sem,def,SEM_TYPE_PROTOCOL,q->ceptr->context);
+            x = __t_new_sym(0,RESULT_PROTOCOL,ns,true);
         }
         break;
     case NEW_ID:
@@ -477,7 +471,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             }
             else {
                 t->contents.symbol = s;
-                Xaddr xa = _r_new_instance(q->r,t);
+                Xaddr xa = _r_new_instance(q->ceptr,t);
                 x = __t_new(0,WHICH_XADDR,&xa,sizeof(Xaddr),1);
             }
         }
@@ -546,7 +540,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
         }
         break;
     case EQ_SYM_ID:
-        x = __t_newi(0,BOOLEAN,
+        x = __t_new_int(0,BOOLEAN,
                      semeq(
                            *(Symbol *)_t_surface(_t_child(code,1)),
                            *(Symbol *)_t_surface(_t_child(code,2))),
@@ -715,7 +709,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             UUIDt uuid = *(UUIDt *)_t_surface(su);
 
             T *response = __r_make_signal(from,to,a,carrier,response_contents,&uuid,0,context->conversation ? context->conversation->cid : NULL);
-            x = _r_send(q->r,response);
+            x = _r_send(q->ceptr,response);
         }
         break;
     case QUOTE_ID:
@@ -744,12 +738,12 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
 
             T* signal_contents = _t_detach_by_idx(code,1);
 
-            ReceptorAddress from = __r_get_self_address(q->r);
+            ReceptorAddress from = __r_get_self_address(q->ceptr);
             T *signal;
 
             if (s.id == SAY_ID) {
                 signal = __r_make_signal(from,to,aspect,carrier,signal_contents,0,0,context->conversation ? context->conversation->cid : NULL);
-                x = _r_send(q->r,signal);
+                x = _r_send(q->ceptr,signal);
             }
             else if (s.id == REQUEST_ID) {
                 T *response_point = NULL;
@@ -774,7 +768,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 if (!until) until = defaultRequestUntil();
                 if (!callback) {
                     err = Block;
-                    debug(D_SIGNALS,"blocking at %s\n",_td(q->r,code));
+                    debug(D_SIGNALS,"blocking at %s\n",_td(q->ceptr,code));
                     response_point = code;
                 }
                 else {
@@ -783,7 +777,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 T *cid = context->conversation ? context->conversation->cid : NULL;
                 signal = __r_make_signal(from,to,aspect,carrier,signal_contents,0,until,cid);
 
-                x = _r_request(q->r,signal,response_carrier,response_point,context->id,cid);
+                x = _r_request(q->ceptr,signal,response_carrier,response_point,context->id,cid);
             }
         }
         break;
@@ -819,7 +813,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                     raise_error("COMPLETE invoked without conversation id outside of CONVERSE");
                 cid = context->conversation->cid;
                 UUIDt *cuuid = __cid_getUUID(cid);
-                T *w = __r_cleanup_conversation(q->r,cuuid);
+                T *w = __r_cleanup_conversation(q->ceptr,cuuid);
                 if (w) _t_free(w);
 
                 // now move the execution point up to the CONVERSE root.
@@ -832,7 +826,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 // if the conversation param was specified we need to get it from
 
                 UUIDt *cuuid = __cid_getUUID(cid);
-                T *w = __r_cleanup_conversation(q->r,cuuid);
+                T *w = __r_cleanup_conversation(q->ceptr,cuuid);
                 // restart the CONVERSE instruction that spawned this conversation
                 if (w) {
                     int *code_path = (int *)_t_surface(_t_child(w,WakeupReferenceCodePathIdx));
@@ -871,7 +865,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
 
             T *items = _t_child(code,1);
             if (!items) return signatureMismatchReductionErr;
-            T *t = __t_newr(0,PARAMS,true);  //holder for the transcoding children
+            T *t = __t_new_node(0,PARAMS,true);  //holder for the transcoding children
             T *src;
             while ((src = _t_detach_by_idx(items,1))) {
                 int e = _p_transcode(sem,src,to_sym,to_s,&x);
@@ -886,7 +880,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 _t_free(t);
             }
             else {
-                x = __t_newr(0,DISSOLVE,true);
+                x = __t_new_node(0,DISSOLVE,true);
                 _t_add(x,t);
                 err = redoReduction;
             }
@@ -920,11 +914,11 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                     _t_free(results);
                 }
 
-                else x = __t_newi(0,BOOLEAN,0,true);
+                else x = __t_new_int(0,BOOLEAN,0,true);
             }
             else {
                 match = _t_match(pattern,t);
-                x = __t_newi(0,BOOLEAN,match,true);
+                x = __t_new_int(0,BOOLEAN,match,true);
             }
             _t_free(pattern);
             _t_free(t);
@@ -980,9 +974,9 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                     }
                     else {
                         debug(D_STREAM,"non CSTRING RESULT_SYMBOL so converting to ASCII_CHARS and transcoding to %s \n",_sem_get_name(sem,sy));
-                        T *src = __t_newr(0,ASCII_CHARS,true);
+                        T *src = __t_new_node(0,ASCII_CHARS,true);
                         while (l--) {
-                            __t_newc(src,ASCII_CHAR,*c,true);
+                            __t_new_char(src,ASCII_CHAR,*c,true);
                             c++;
                         }
                         int e = _p_transcode(sem,src,sy,to_s,&x);
@@ -1024,7 +1018,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 if (err == 0) return unixErrnoReductionErr;
             }
             /// @todo what should this really return?
-            x = __t_news(0,REDUCTION_ERROR_SYMBOL,NULL_SYMBOL,1);
+            x = __t_new_sym(0,REDUCTION_ERROR_SYMBOL,NULL_SYMBOL,1);
         }
         break;
     case STREAM_ALIVE_ID:
@@ -1032,7 +1026,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             // get the stream param
             T *s = _t_detach_by_idx(code,1);
             Stream *st = _t_surface(s);
-            x = __t_newi(0,BOOLEAN,_st_is_alive(st),true);
+            x = __t_new_int(0,BOOLEAN,_st_is_alive(st),true);
             _t_free(s);
         }
         break;
@@ -1050,7 +1044,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 raise_error("ERROR; return code from pthread_join() is %d\n", rc);
             }
             _st_free(st);
-            x = __t_newi(0,BOOLEAN,1,true);
+            x = __t_new_int(0,BOOLEAN,1,true);
             _t_free(s);
         }
         break;
@@ -1076,8 +1070,8 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                     else if (semeq(c,ITERATE_ON_SYMBOL)) {
                         state->type = IterateTypeOnSymbol;
                         T *params = _t_child(code,1);
-                        T *list = _t_newr(params,ITERATION_DATA);
-                        _a_get_instances(&q->r->instances,*(Symbol *)_t_surface(x),list);
+                        T *list = _t_new_node(params,ITERATION_DATA);
+                        _a_get_instances(&q->ceptr->instances,*(Symbol *)_t_surface(x),list);
                         // if the list has no children the we are already done
                         done = !_t_children(list);
                     }
@@ -1142,7 +1136,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                 // add a copy of the body/condition on as the last child
                 _t_add(code,_t_rclone(_t_child(state->code,next_phase == EvalBody ? 3 : 2)));
                 // and reset the current child count so it gets evaluated.
-                set_rt_cur_child(q->r,code,1); // reset the current child count on the code
+                set_rt_cur_child(q->ceptr,code,1); // reset the current child count on the code
                 state->phase = next_phase;
                 return Eval;
             }
@@ -1185,25 +1179,25 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             }
             if (!with) {
                 with = _t_new_root(PARAMS);
-                T *s = _t_newr(with,SLOT);
-                _t_news(s,USAGE,NULL_SYMBOL);
+                T *s = _t_new_node(with,SLOT);
+                _t_new_sym(s,USAGE,NULL_SYMBOL);
             }
 
             T *cid = context && context->conversation ? _t_clone(context->conversation->cid) : NULL;
             // @todo add SEMANTIC_MAP into LISTEN
             if (act) {
-                _r_add_expectation(q->r,aspect,carrier,match,act,with,until,NULL,cid);
-                x = __t_news(0,REDUCTION_ERROR_SYMBOL,NULL_SYMBOL,1);
+                _r_add_expectation(q->ceptr,aspect,carrier,match,act,with,until,NULL,cid);
+                x = __t_new_sym(0,REDUCTION_ERROR_SYMBOL,NULL_SYMBOL,1);
                 debug(D_LISTEN,"adding expectation\n");
             }
             else {
                 act = __p_build_wakeup_info(code,context->id);
                 if (!until) {
                     until = _t_new_root(END_CONDITIONS);
-                    _t_newi(until,COUNT,1);
+                    _t_new_int(until,COUNT,1);
                 }
-                _r_add_expectation(q->r,aspect,carrier,match,act,with,until,NULL,cid);
-                debug(D_LISTEN,"adding expectation and blocking at %d,%s\n",context->id,_td(q->r,code));
+                _r_add_expectation(q->ceptr,aspect,carrier,match,act,with,until,NULL,cid);
+                debug(D_LISTEN,"adding expectation and blocking at %d,%s\n",context->id,_td(q->ceptr,code));
                 return Block;
             }
         }
@@ -1214,7 +1208,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             T *interaction = _t_detach_by_idx(code,1);
             T *bindings = _t_detach_by_idx(code,1);
 	    T *sem_map;
-	    x = __o_initiate(q->r,*(SemanticID *)_t_surface(protocol),*(SemanticID *)_t_surface(interaction),bindings,&sem_map);
+	    x = __o_initiate(q->ceptr,*(SemanticID *)_t_surface(protocol),*(SemanticID *)_t_surface(interaction),bindings,&sem_map);
             _t_free(protocol);
             _t_free(interaction);
 	    err = redoReduction;
@@ -1225,7 +1219,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             x = _t_detach_by_idx(code,1);
             Symbol sym = *(Symbol *)_t_surface(x);
             _t_free(x);
-            ReceptorAddress addr =  __r_get_self_address(q->r);
+            ReceptorAddress addr =  __r_get_self_address(q->ceptr);
             x = ___r_make_addr(0,sym,addr,true);
         }
         break;
@@ -1246,7 +1240,7 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
             else as = type;
             T *l = _sem_get_label(sem,sym,type);
             if (!l) raise_error("label not found for symbol");
-            x = __t_new_str(0,as,_t_surface(l),true);
+            x = __t_new_string(0,as,_t_surface(l),true);
         }
         break;
     case MAGIC_ID:
@@ -1269,26 +1263,26 @@ Error __p_reduce_sys_proc(R *context,Symbol s,T *code,Q *q) {
                         }
                     }
                     s[l]=0;
-                    x = __t_new_str(0,LINE,s,1);
+                    x = __t_new_string(0,LINE,s,1);
                     free(s);
                 }
                 break;
             case MagicDebug:
                 if (!debugging(D_SIGNALS)) {
                     debug_enable(D_SIGNALS);
-                    x = __t_new_str(0,LINE,"debugging enabled",1);
+                    x = __t_new_string(0,LINE,"debugging enabled",1);
                 }
                 else {
                     debug_disable(D_SIGNALS);
-                    x = __t_new_str(0,LINE,"debugging disabled",1);
+                    x = __t_new_string(0,LINE,"debugging disabled",1);
                 }
                 break;
             case MagicQuit:
                 if (G_vm) {
-                    __r_kill(G_vm->r);
+                    __r_kill(G_vm->ceptr);
                 }
             default:
-                x = __t_new_str(0,TEST_STR_SYMBOL,"blorp!",1);
+                x = __t_new_string(0,TEST_STR_SYMBOL,"blorp!",1);
             }
         }
         break;
@@ -1514,7 +1508,7 @@ Error _p_reduce(SemTable *sem,T *rt) {
     r.root = NULL;
     r.sem = sem;
     r.q = &q;
-    q.r = &r;
+    q.ceptr = &r;
 
     while(_p_step(&q, &context) != Done);
     e = context->err;
@@ -1548,14 +1542,14 @@ T * __p_buildErr(R *context) {
         //    case conversatonCompletedReductionErr: se=CONVERSATION_COMPLETED_ERR;break;
     case unixErrnoReductionErr:
         se=UNIX_ERRNO_ERR;
-        extra = _t_new_str(0,TEST_STR_SYMBOL,strerror(errno));
+        extra = _t_new_string(0,TEST_STR_SYMBOL,strerror(errno));
         break;
     case raiseReductionErr:
         se = *(Symbol *)_t_surface(_t_child(context->node_pointer,1));
         break;
     default: raise_error("unknown reduction error: %d",context->err);
     }
-    T *err = __t_newr(0,se,true);
+    T *err = __t_new_node(0,se,true);
     int *path = _t_get_path(context->node_pointer);
    _t_new(err,ERROR_LOCATION,path,sizeof(int)*(_t_path_depth(path)+1));
     free(path);
@@ -1577,7 +1571,7 @@ T * __p_buildErr(R *context) {
  */
 Error _p_step(Q *q, R **contextP) {
     R *context = *contextP;
-    SemTable *sem = q->r->sem;
+    SemTable *sem = q->ceptr->sem;
 
     switch(context->state) {
     case noReductionErr:
@@ -1615,7 +1609,7 @@ Error _p_step(Q *q, R **contextP) {
                 // get results of the run_tree
                 T *np = _t_detach_by_idx(ctx->run_tree,1);
                 _t_replace(context->parent,context->idx,np); // replace the process call node with the result
-                set_rt_cur_child(q->r,np,RUN_TREE_EVALUATED);
+                set_rt_cur_child(q->ceptr,np,RUN_TREE_EVALUATED);
                 context->node_pointer = np;
                 context->state = Eval;  // or possible ascend??
             }
@@ -1654,7 +1648,7 @@ Error _p_step(Q *q, R **contextP) {
                     np = _t_rclone(param);
                 }
                 else if (semeq(result_sym,RESULT_SYMBOL)) {
-                    np = __t_news(0,*(Symbol *)_t_surface(result),_t_symbol(param),true);
+                    np = __t_new_sym(0,*(Symbol *)_t_surface(result),_t_symbol(param),true);
                 }
                 else if (semeq(result_sym,RESULT_LABEL)) {
                     Symbol label_sym = *(Symbol *)_t_surface(result);
@@ -1707,7 +1701,7 @@ Error _p_step(Q *q, R **contextP) {
                 // or if we are doing deep param_ref searching, then search the entire tree
                 // @todo increase efficiency by adding some instruction to allow the coder choose, see #39
 #ifndef RUN_TREE_SHALLOW_PARAM_REF_SEARCH
-                int node_cur_child = get_rt_cur_child(q->r,np);
+                int node_cur_child = get_rt_cur_child(q->ceptr,np);
                 if ((node_cur_child != RUN_TREE_EVALUATED) && count && (count != node_cur_child))
                     context->state = Descend;
                 else
@@ -1779,7 +1773,7 @@ Error _p_step(Q *q, R **contextP) {
                             parent_u = NULL;
                         }
 
-                        T *c = _r_add_conversation(q->r,parent_u,&cuuid,until?_t_clone(until):NULL,
+                        T *c = _r_add_conversation(q->ceptr,parent_u,&cuuid,until?_t_clone(until):NULL,
                                                    __p_build_wakeup_info(np,context->id)
                                                    );
 
@@ -1796,7 +1790,7 @@ Error _p_step(Q *q, R **contextP) {
                         context->conversation = state;
                     }
                 }
-                if (count == get_rt_cur_child(q->r,np) || semeq(s,QUOTE)) {
+                if (count == get_rt_cur_child(q->ceptr,np) || semeq(s,QUOTE)) {
                     // if the current child == the child count this means
                     // all the children have been processed, so we can evaluate this process
                     // if the process is QUOTE that's a special case and we evaluate it
@@ -1842,7 +1836,7 @@ Error _p_step(Q *q, R **contextP) {
                                 // with the RUN_TREE in it so we don't have store it in the actual tree
                                 int i = _t_node_index(np);
                                 T *p = _t_parent(np);
-                                T *dummy = __t_newr(0,NOOP,true);
+                                T *dummy = __t_new_node(0,NOOP,true);
                                 p->structure.children[i-1] = dummy;
                                 dummy->structure.parent = p;
                                 np->structure.parent = NULL;
@@ -1851,7 +1845,7 @@ Error _p_step(Q *q, R **contextP) {
                             }
                             else {
                                 context->state = Eval;
-                                set_rt_cur_child(q->r,np,RUN_TREE_NOT_EVAULATED); // reset the current child count on the code
+                                set_rt_cur_child(q->ceptr,np,RUN_TREE_NOT_EVAULATED); // reset the current child count on the code
                             }
                         }
                         else context->state = e ? e : Ascend;
@@ -1869,14 +1863,14 @@ Error _p_step(Q *q, R **contextP) {
         }
         break;
     case Ascend:
-        set_rt_cur_child(q->r,context->node_pointer,RUN_TREE_EVALUATED);
+        set_rt_cur_child(q->ceptr,context->node_pointer,RUN_TREE_EVALUATED);
         context->node_pointer = context->parent;
         context->parent = _t_parent(context->node_pointer);
         if (!context->parent || context->parent == context->run_tree || (context->node_pointer == context->run_tree)) {
             context->idx = 1;
         }
         else {
-            context->idx = get_rt_cur_child(q->r,context->parent);
+            context->idx = get_rt_cur_child(q->ceptr,context->parent);
         }
         if (context->node_pointer == context->run_tree)
             context->state = Pop;
@@ -1885,7 +1879,7 @@ Error _p_step(Q *q, R **contextP) {
         break;
     case Descend:
         context->parent = context->node_pointer;
-        rt_check(q->r,context->node_pointer);
+        rt_check(q->ceptr,context->node_pointer);
         context->idx = ++rt_cur_child(context->node_pointer);
         context->node_pointer = _t_child(context->node_pointer,context->idx);
         context->state = Eval;
@@ -1906,7 +1900,7 @@ Error _p_step(Q *q, R **contextP) {
             // the first parameter to the error code is always a reduction error
             // which gets added on as the 4th child of the run tree when the
             // error happens.
-            T *ps = _t_newr(context->run_tree,PARAMS);
+            T *ps = _t_new_node(context->run_tree,PARAMS);
 
             T *err = __p_buildErr(context);
             debug(D_STEP,"In Error Handler with %s\n",_t2s(sem,err));
@@ -1930,7 +1924,7 @@ Error _p_step(Q *q, R **contextP) {
  */
 T* __p_build_wakeup_info(T *code_point,int process_id) {
     T *wakeup = _t_new_root(WAKEUP_REFERENCE);
-    _t_newi(wakeup,PROCESS_IDENT,process_id);
+    _t_new_int(wakeup,PROCESS_IDENT,process_id);
     int *path = _t_get_path(code_point);
     _t_new(wakeup,CODE_PATH,path,sizeof(int)*(_t_path_depth(path)+1));
     free(path);
@@ -1944,7 +1938,7 @@ T *__p_build_run_tree_va(T* code,int num_params,va_list params) {
     T *t = _t_new_root(RUN_TREE);
     T *c = _t_rclone(code);
     _t_add(t,c);
-    T *ps = _t_newr(t,PARAMS);
+    T *ps = _t_new_node(t,PARAMS);
     int i;
     for(i=1;i<=num_params;i++) {
         _t_add(ps,_t_clone(va_arg(params,T *)));
@@ -1987,13 +1981,13 @@ T *_p_make_run_tree(SemTable *sem,Process p,T *params,T *sem_map) {
     // and leave the run tree params empty
     if (semeq(_t_symbol(code),NULL_PROCESS)) {
         ps = __t_new(t,p,0,0,true);
-        _t_newr(t,PARAMS);
+        _t_new_node(t,PARAMS);
     }
     else {
         // otherwise we clone the code of the process
         T *c = _t_rclone(code);
         _t_add(t,c);
-        ps = _t_newr(t,PARAMS);
+        ps = _t_new_node(t,PARAMS);
     }
     int i,num_params = _t_children(params);
     for(i=1;i<=num_params;i++) {
@@ -2012,9 +2006,9 @@ T *_p_make_run_tree(SemTable *sem,Process p,T *params,T *sem_map) {
  * @param[in] r receptor in which to create the Queue
  * @returns Q the processing queue
  */
-Q *_p_newq(Receptor *r) {
+Q *_p_newq(Receptor *ceptr) {
     Q *q = malloc(sizeof(Q));
-    q->r = r;
+    q->ceptr = ceptr;
     q->contexts_count = 0;
     q->active = NULL;
     q->completed = NULL;
@@ -2137,7 +2131,7 @@ Error _p_reduceq(Q *q) {
             char *s = __debug_state_str(context);
             debug(D_REDUCEV,"ID:%d -- State %s(%d)\n",qe->id,s,context->state);
             debug(D_REDUCEV,"  idx:%d\n",context->idx);
-            debug(D_REDUCEV,"%s\n",_t2s(q->r->sem,context->run_tree));
+            debug(D_REDUCEV,"%s\n",_t2s(q->ceptr->sem,context->run_tree));
             if (context) {
                 if (context->node_pointer == 0) {
                     debug(D_REDUCEV,"Node Pointer: NULL!\n");
@@ -2163,7 +2157,7 @@ Error _p_reduceq(Q *q) {
         debug(D_REDUCEV,"result state:%s\n\n",__debug_state_str(qe->context));
         if (debugging(D_REDUCE) && prev_state == Eval) {
             debug_np(D_REDUCE,qe->context->node_pointer);
-            debug(D_REDUCE,"Eval: %s\n\n",_t2s(q->r->sem,qe->context->run_tree));
+            debug(D_REDUCE,"Eval: %s\n\n",_t2s(q->ceptr->sem,qe->context->run_tree));
         }
 #endif
         debug(D_LOCK,"reduce LOCK\n");
@@ -2210,7 +2204,7 @@ void _p_cleanup(Q *q) {
     pthread_mutex_lock(&q->mutex);
     Qe *e = q->completed;
     while (e) {
-        T *ett = _t_child(_t_child(q->r->root,ReceptorInstanceStateIdx),ReceptorElapsedTimeIdx);
+        T *ett = _t_child(_t_child(q->ceptr->root,ReceptorInstanceStateIdx),ReceptorElapsedTimeIdx);
         int *et = (int *)_t_surface(ett);
         (*et) += e->accounts.elapsed_time;
         e = e->next;
@@ -2239,14 +2233,14 @@ T *__p_make_form(Symbol sym,char *output_label,Symbol output_type,SemanticID out
     Symbol type,value;
     int optional;
     T *signature = _t_new_root(sym);
-    T *o = _t_newr(signature,OUTPUT_SIGNATURE);
-    T *l = _t_newr(o,SIGNATURE_LABEL);
-    _t_new_str(l,ENGLISH_LABEL,output_label);
+    T *o = _t_new_node(signature,OUTPUT_SIGNATURE);
+    T *l = _t_new_node(o,SIGNATURE_LABEL);
+    _t_new_string(l,ENGLISH_LABEL,output_label);
     if (semeq(output_type,SIGNATURE_PASSTHRU)) {
-        _t_newr(o,output_type);
+        _t_new_node(o,output_type);
     }
     else {
-        _t_news(o,output_type,output_sem);
+        _t_new_sym(o,output_type,output_sem);
     }
     while ((label = va_arg(params,char*))) {
         type = va_arg(params,Symbol);
@@ -2258,11 +2252,11 @@ T *__p_make_form(Symbol sym,char *output_label,Symbol output_type,SemanticID out
             optional = 0;
         }
         value = va_arg(params,Symbol);
-        T *i = _t_newr(signature,INPUT_SIGNATURE);
-        l = _t_newr(i,SIGNATURE_LABEL);
-        _t_new_str(l,ENGLISH_LABEL,label);
-        _t_news(i,type,value);
-        if (optional) _t_newr(i,SIGNATURE_OPTIONAL);
+        T *i = _t_new_node(signature,INPUT_SIGNATURE);
+        l = _t_new_node(i,SIGNATURE_LABEL);
+        _t_new_string(l,ENGLISH_LABEL,label);
+        _t_new_sym(i,type,value);
+        if (optional) _t_new_node(i,SIGNATURE_OPTIONAL);
     }
     va_end(params);
     return signature;
