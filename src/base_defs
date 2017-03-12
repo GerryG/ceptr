@@ -545,7 +545,7 @@ Symbol: RESPONSE_HANDLER_PARAMETERS,SYMBOL;
 
 Symbol: backnforth,INTERACTION;
 
-Data: req_code,(SLOT (GOAL:RESPONSE_HANDLER) (SLOT_CHILDREN (SLOT (USAGE:RESPONSE_HANDLER_PARAMETERS)) (REQUEST (SLOT (ROLE:RESPONDER) (SLOT_IS_VALUE_OF:TO_ADDRESS)) (SLOT (USAGE:CHANNEL) (SLOT_IS_VALUE_OF:ASPECT_IDENT)) (CARRIER:backnforth) (SLOT (USAGE:REQUEST_TYPE)) (CARRIER:backnforth)))));
+Data: req_code,(SLOT (GOAL:RESPONSE_HANDLER) (SLOT_CHILDREN (SLOT (USAGE:RESPONSE_HANDLER_PARAMETERS)) (REQUEST (SLOT (ROLE:RESPONDER) (SLOT_IS_VALUE_OF:TO_ADDRESS)) (SLOT (USAGE:CHANNEL) (SLOT_IS_VALUE_OF:ASPECT_IDENT)) (CARRIER:backnforth) (SLOT (USAGE:REQUEST_TYPE)) (CARRIER:backnforth))));
 Process: send_request,req_code,"send request","response",SIGNATURE_ANY,NULL_STRUCTURE;
 
 Data: resp_code,(RESPOND (SIGNAL_REF:/2/1/4) (SLOT (GOAL:REQUEST_HANDLER)));
@@ -852,7 +852,7 @@ Data: http_response_2_lines_proc, (LINES
       (DISSOLVE (TRANSCODE (TRANSCODE_PARAMS (TRANSCODE_TO:LINES)) (TRANSCODE_ITEMS (PARAM_REF:/2/1/2))))
       (LINE:"")
       (TRANSCODE (TRANSCODE_PARAMS (TRANSCODE_TO:LINE)) (TRANSCODE_ITEMS (PARAM_REF:/2/1/3))))
-      );
+      ;
 
 ProcessL: http_response_2_lines,http_response_2_lines_proc,"http response transcoder",HTTP_RESPONSE,TRANSCODER,"output",SIGNATURE_SYMBOL,LINES,"input",SIGNATURE_SYMBOL,HTTP_RESPONSE;
 
@@ -932,7 +932,7 @@ Data: line_2_httpreq_proc, (SAY
             (CARRIER:backnforth)
             (PARAM_REF:/2/1)
             (RESPONSE_CARRIER:backnforth))))
-      )));
+      );
 
 Process: line_2_httpreq,line_2_httpreq_proc,"parse an HTTP_REQUEST from a LINE","signal id",SIGNATURE_SYMBOL,SIGNAL_UUID;
 
