@@ -19,3 +19,16 @@ clean:
 
 #base_defs.h: src/base_defs
 #	perl src/base_defs.pl
+
+basedef.yy.c: basedef.l
+	flex -o basedef.yy.c basedef.l 
+
+basedef.tab.c: basedef.y
+	bison -d --debug basedef.y
+
+basedef: basedef.yy.c basedef.tab.c
+	cc basedef.yy.c basedef.tab.c -o basedef -ll
+
+semclean:
+	rm basedef basedef.yy.? basedef.tab.?
+
